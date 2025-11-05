@@ -26,7 +26,7 @@ class CuriositaResponse
       titolo: json['titolo'] as String,
       contenuto: json['contenuto'] as String,
       paginaRiferimento: (json['paginaRiferimento'] as int).toInt(),
-      utenteCreatore: json['utenteId'] as AutoreCommentoResponse,
+      utenteCreatore: AutoreCommentoResponse.fromJson(json['utenteCreatore']),
     );
   }
 }

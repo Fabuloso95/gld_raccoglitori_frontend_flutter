@@ -1,16 +1,16 @@
-class PropostaVotoResponse 
+class RuoloResponse 
 {
   final int id;
   final String nome;
 
-  PropostaVotoResponse({
+  RuoloResponse({
     required this.id,
     required this.nome,
   });
 
-  factory PropostaVotoResponse.fromJson(Map<String, dynamic> json) 
+  factory RuoloResponse.fromJson(Map<String, dynamic> json) 
   {
-    return PropostaVotoResponse(
+    return RuoloResponse(
       id: (json['id'] as int).toInt(),
       nome: json['nome'] as String,
     );

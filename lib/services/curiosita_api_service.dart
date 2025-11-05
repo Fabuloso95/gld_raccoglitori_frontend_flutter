@@ -1,15 +1,14 @@
 import 'dart:convert';
+import 'package:gld_raccoglitori/models/CuriositaRequestModel.dart';
 import 'package:http/http.dart' as http;
-import '../models/commento_pagina_response.dart';
-import '../models/commentoPaginaRequestModel.dart';
-import '../models/UpdateContenutoRequestModel.dart';
+import '../models/curiosita_response.dart';
 
-class CommentiApiService 
+class CuriositaApiService 
 {
   final String baseUrl;
   final String? authToken;
 
-  CommentiApiService({required this.baseUrl, this.authToken});
+  CuriositaApiService({required this.baseUrl, this.authToken});
 
   // Headers comuni per tutte le richieste
   Map<String, String> get _headers 
@@ -45,10 +44,10 @@ class CommentiApiService
     }
   }
 
-  // Crea un nuovo commento
-  Future<CommentoPaginaResponse> createCommento(CommentoPaginaRequestModel request) async 
+  // Crea una nuova curiosità
+  Future<CuriositaResponse> createCuriosita(CuriositaRequestModel request) async 
   {
-    final url = Uri.parse('$baseUrl/api/commenti');
+    final url = Uri.parse('$baseUrl/api/curiosita');
     
     final response = await http.post(
       url,
@@ -59,19 +58,19 @@ class CommentiApiService
     if (response.statusCode == 201) 
     {
       final Map<String, dynamic> responseData = json.decode(response.body);
-      return CommentoPaginaResponse.fromJson(responseData);
+      return CuriositaResponse.fromJson(responseData);
     } 
     else 
     {
       _handleError(response);
-      throw Exception('Errore nella creazione del commento');
+      throw Exception('Errore nella creazione della curiosità');
     }
   }
 
-  // Ottiene un commento per ID
-  Future<CommentoPaginaResponse> getCommentoById(int id) async 
+  // Ottiene una curiosità per ID
+  Future<CuriositaResponse> getCuriositaById(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/commenti/$id');
+    final url = Uri.parse('$baseUrl/api/curiosita/$id');
     
     final response = await http.get(
       url,
@@ -81,23 +80,22 @@ class CommentiApiService
     if (response.statusCode == 200) 
     {
       final Map<String, dynamic> responseData = json.decode(response.body);
-      return CommentoPaginaResponse.fromJson(responseData);
+      return CuriositaResponse.fromJson(responseData);
     }
     else 
     {
       _handleError(response);
-      throw Exception('Errore nel recupero del commento');
+      throw Exception('Errore nel recupero della curiosità');
     }
   }
 
-  // Ottiene i commenti per lettura e pagina
-  Future<List<CommentoPaginaResponse>> getCommentiByLetturaAndPagina({
-    required int letturaCorrenteId,
-    required int paginaRiferimento,
+  // Ottiene una curiosità per libro
+  Future<List<CuriositaResponse>> getCuriositaByLibro({
+    required int libroId,
   }) async 
   {
     final url = Uri.parse(
-      '$baseUrl/api/commenti/lettura/$letturaCorrenteId/pagina/$paginaRiferimento'
+      '$baseUrl/api/curiosita/libro/$libroId'
     );
     
     final response = await http.get(
@@ -109,20 +107,20 @@ class CommentiApiService
     {
       final List<dynamic> responseData = json.decode(response.body);
       return responseData
-          .map((json) => CommentoPaginaResponse.fromJson(json))
+          .map((json) => CuriositaResponse.fromJson(json))
           .toList();
     } 
     else 
     {
       _handleError(response);
-      throw Exception('Errore nel recupero dei commenti');
+      throw Exception('Errore nel recupero delle curiosità');
     }
   }
 
-  // Ottiene i commenti per autore
-  Future<List<CommentoPaginaResponse>> getCommentiByAutore(int utenteId) async 
+  // Ottiene una curiosità tramite libro e pagina
+  Future<List<CuriositaResponse>> getCuriositaByLibroAndPagina(int libroId, int paginaRiferimento) async 
   {
-    final url = Uri.parse('$baseUrl/api/commenti/autore/$utenteId');
+    final url = Uri.parse('$baseUrl/api/curiosita/libro/$libroId/pagina/$paginaRiferimento');
     
     final response = await http.get(
       url,
@@ -133,50 +131,46 @@ class CommentiApiService
     {
       final List<dynamic> responseData = json.decode(response.body);
       return responseData
-          .map((json) => CommentoPaginaResponse.fromJson(json))
+          .map((json) => CuriositaResponse.fromJson(json))
           .toList();
     } 
     else 
     {
       _handleError(response);
-      throw Exception('Errore nel recupero dei commenti dell\'autore');
+      throw Exception('Errore nel recupero delle curiosità');
     }
   }
 
-  // Aggiorna il contenuto di un commento
-  Future<CommentoPaginaResponse> updateCommentoContenuto({
-    required int commentoId,
-    required String nuovoContenuto,
+  // Aggiorna il contenuto di una curiosità
+  Future<CuriositaResponse> updateCuriosita({
+    required int id,
+    required CuriositaRequestModel request,
   }) async 
   {
-    final url = Uri.parse('$baseUrl/api/commenti/$commentoId/contenuto');
+    final url = Uri.parse('$baseUrl/api/curiosita/$id');
     
-    final requestBody = UpdateContenutoRequestModel(
-      nuovoContenuto: nuovoContenuto,
-    );
-
-    final response = await http.patch(
+    final response = await http.put(
       url,
       headers: _headers,
-      body: json.encode(requestBody.toJson()),
+      body: json.encode(request.toJson()),
     );
 
     if (response.statusCode == 200) 
     {
       final Map<String, dynamic> responseData = json.decode(response.body);
-      return CommentoPaginaResponse.fromJson(responseData);
+      return CuriositaResponse.fromJson(responseData);
     } 
     else 
     {
       _handleError(response);
-      throw Exception('Errore nell\'aggiornamento del commento');
+      throw Exception('Errore nell\'aggiornamento della curiosità'); // Cambiato messaggio
     }
   }
 
   // Elimina un commento
-  Future<void> deleteCommento(int commentoId) async 
+  Future<void> deleteCuriosita(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/commenti/$commentoId');
+    final url = Uri.parse('$baseUrl/api/curiosita/$id');
     
     final response = await http.delete(
       url,
@@ -190,7 +184,7 @@ class CommentiApiService
     else 
     {
       _handleError(response);
-      throw Exception('Errore nell\'eliminazione del commento');
+      throw Exception('Errore nell\'eliminazione della curiosità');
     }
   }
 }
