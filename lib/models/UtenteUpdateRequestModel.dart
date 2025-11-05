@@ -43,7 +43,7 @@ class UtenteUpdateRequestModel
       'nome': nome,
       'cognome': cognome,
       'email': email,
-      'ruolo': ruolo,
+      'ruolo': ruolo.toString().split('.').last,
       'telefono': telefono,
       'dataNascita': dataNascita,
     };
