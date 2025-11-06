@@ -92,39 +92,39 @@ class LibroApiService
   }
 
   // Ottiene tutti i libri o effettua una ricerca
-Future<List<LibroResponse>> getAllLibriOrSearch({
-  String? searchTerm,
-}) async 
-{
-  final Uri url;
-  
-  if (searchTerm != null && searchTerm.isNotEmpty) 
+  Future<List<LibroResponse>> getAllLibriOrSearch({
+    String? searchTerm,
+  }) async 
   {
-    url = Uri.parse('$baseUrl/api/libri?searchTerm=${Uri.encodeComponent(searchTerm)}');
-  } 
-  else 
-  {
-    url = Uri.parse('$baseUrl/api/libri');
-  }
-  
-  final response = await http.get(
-    url,
-    headers: _headers,
-  );
+    final Uri url;
+    
+    if (searchTerm != null && searchTerm.isNotEmpty) 
+    {
+      url = Uri.parse('$baseUrl/api/libri?searchTerm=${Uri.encodeComponent(searchTerm)}');
+    } 
+    else 
+    {
+      url = Uri.parse('$baseUrl/api/libri');
+    }
+    
+    final response = await http.get(
+      url,
+      headers: _headers,
+    );
 
-  if (response.statusCode == 200) 
-  {
-    final List<dynamic> responseData = json.decode(response.body);
-    return responseData
-        .map((json) => LibroResponse.fromJson(json))
-        .toList();
-  } 
-  else 
-  {
-    _handleError(response);
-    throw Exception('Errore nel recupero dei libri');
+    if (response.statusCode == 200) 
+    {
+      final List<dynamic> responseData = json.decode(response.body);
+      return responseData
+          .map((json) => LibroResponse.fromJson(json))
+          .toList();
+    } 
+    else 
+    {
+      _handleError(response);
+      throw Exception('Errore nel recupero dei libri');
+    }
   }
-}
 
   // Aggiorna i progressi di un libro
   Future<LibroResponse> aggiornaLibro({

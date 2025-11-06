@@ -336,6 +336,20 @@ class AuthService with ChangeNotifier
     }
   }
 
+  int? get currentUserId {
+    // Estrai l'ID utente dal token JWT o da un campo separato
+    // Per ora restituiamo un ID fittizio - dovrai adattarlo al tuo backend
+    if (_accessToken != null) {
+      try {
+        final payload = _decodeJwt(_accessToken!);
+        return payload?['userId'] as int? ?? 1; // Fallback a 1 per testing
+      } catch (e) {
+        return 1; // Fallback per testing
+      }
+    }
+    return null;
+  }
+
   // --- LOGOUT ---
   Future<void> logout() async 
   {
