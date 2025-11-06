@@ -1,10 +1,8 @@
-import 'package:uuid/uuid.dart';
-
 class MessaggioChatRequestModel
 {
-  final Uuid gruppoId;
+  final String? gruppoId;
   final String tipoChat;
-  final int destinatarioId;
+  final int? destinatarioId;
   final String contenuto;
 
   MessaggioChatRequestModel({
@@ -17,9 +15,9 @@ class MessaggioChatRequestModel
   factory MessaggioChatRequestModel.fromJson(Map<String, dynamic> json)
   {
     return MessaggioChatRequestModel(
-      gruppoId: json['gruppoId'] as Uuid,
+      gruppoId: json['gruppoId'] as String?,
       tipoChat: json['tipoChat'] as String,
-      destinatarioId: (json['destinatarioId'] as int).toInt(),
+      destinatarioId: json['destinatarioId'] as int?,
       contenuto: json['contenuto'] as String,
     );
   }
@@ -28,9 +26,9 @@ class MessaggioChatRequestModel
   {
     return
     {
-      'gruppoId': gruppoId,
+      if (gruppoId != null) 'gruppoId': gruppoId,
       'tipoChat': tipoChat,
-      'destinatarioId': destinatarioId,
+      if (destinatarioId != null) 'destinatarioId': destinatarioId,
       'contenuto': contenuto
     };
   }

@@ -11,7 +11,7 @@ class VotoUtenteRequestModel
   factory VotoUtenteRequestModel.fromJson(Map<String, dynamic> json) 
   {
     return VotoUtenteRequestModel(
-      propostaVotoId: (json['propostaVotoId'] as num).toInt(),
+      propostaVotoId: json['propostaVotoId'] as int,
       meseVotazione: json['meseVotazione'],
     );
   }

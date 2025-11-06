@@ -1,19 +1,18 @@
-import 'package:uuid/uuid.dart';
 import 'autore_commento_response.dart';
 
 class MessaggioChatResponse 
 {
   final int id;
-  final AutoreCommentoResponse titolo;
-  final AutoreCommentoResponse destinatario;
-  final Uuid gruppoID;
+  final AutoreCommentoResponse mittente;
+  final AutoreCommentoResponse? destinatario;
+  final String? gruppoID;
   final String tipoChat;
   final String contenuto;
   final DateTime dataInvio;
 
   MessaggioChatResponse({
     required this.id,
-    required this.titolo,
+    required this.mittente,
     required this.destinatario,
     required this.gruppoID,
     required this.tipoChat,
@@ -25,9 +24,9 @@ class MessaggioChatResponse
   {
     return MessaggioChatResponse(
       id: (json['id'] as int).toInt(),
-      titolo: json['titolo'] as AutoreCommentoResponse,
-      destinatario: json['destinatario'] as AutoreCommentoResponse,
-      gruppoID: json['gruppoID'] as Uuid,
+      mittente: json['mittente'] as AutoreCommentoResponse,
+      destinatario: json['destinatario'] != null ? AutoreCommentoResponse.fromJson(json['destinatario']) : null,
+      gruppoID: json['gruppoID'] as String?,
       tipoChat: json['tipoChat'] as String,
       contenuto: json['contenuto'] as String,
       dataInvio: DateTime.parse(json['dataInvio'] as String),

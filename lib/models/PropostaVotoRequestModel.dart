@@ -8,10 +8,10 @@ class PropostaVotoRequestModel
     required this.meseVotazione
   });
 
-    factory PropostaVotoRequestModel.fromJson(Map<String, dynamic> json) 
+  factory PropostaVotoRequestModel.fromJson(Map<String, dynamic> json) 
   {
     return PropostaVotoRequestModel(
-      libroId: (json['libroId'] as num).toInt(),
+      libroId: json['libroId'] as int, 
       meseVotazione: json['meseVotazione'],
     );
   }

@@ -7,7 +7,7 @@ class LetturaCorrenteResponse
   final int libroId;
   final int paginaCorrente;
   final DateTime dataInizio; 
-  final DateTime dataCompletamento; 
+  final DateTime? dataCompletamento; 
   final bool partecipaChiamataZoom;
   final List<CommentoPaginaResponse> commentiPagina;
 
@@ -32,7 +32,9 @@ class LetturaCorrenteResponse
       dataInizio: DateTime.parse(json['dataInizio'] as String),
       dataCompletamento: DateTime.parse(json['dataCompletamento'] as String),
       partecipaChiamataZoom: json['partecipaChiamataZoom'] as bool,
-      commentiPagina: json['commentiPagina'] as List<CommentoPaginaResponse>,
+      commentiPagina: (json['commentiPagina'] as List<dynamic>)
+          .map((commento) => CommentoPaginaResponse.fromJson(commento))
+          .toList(),
     );
   }
 }

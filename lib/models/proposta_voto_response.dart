@@ -20,7 +20,7 @@ class PropostaVotoResponse
   {
     return PropostaVotoResponse(
       id: (json['id'] as int).toInt(),
-      libroProposto: json['libroProposto'] as LibroResponse,
+      libroProposto: LibroResponse.fromJson(json['libroProposto']),
       meseVotazione: json['meseVotazione'] as String,
       dataCreazione: DateTime.parse(json['dataCreazione'] as String),
       numVoti: (json['numVoti'] as int).toInt(),

@@ -15,8 +15,8 @@ class VotoUtenteResponse
   factory VotoUtenteResponse.fromJson(Map<String, dynamic> json) 
   {
     return VotoUtenteResponse(
-      id: (json['id'] as int).toInt(),
-      utenteId: (json['utenteId'] as int).toInt(),
+      id: json['id'] as int,
+      utenteId: json['utenteId'] as int,
       propostaVotoId: (json['propostaVotoId'] as int).toInt(),
       meseVotazione: json['meseVotazione'] as String,
     );
