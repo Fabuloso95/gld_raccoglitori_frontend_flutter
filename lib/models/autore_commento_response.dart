@@ -15,4 +15,14 @@ class AutoreCommentoResponse
       username: json['username']
     );
   }
+
+  String get nomeVisualizzato 
+  {
+    return username;
+  }
+
+  String get iniziale 
+  {
+    return username.isNotEmpty ? username[0].toUpperCase() : '?';
+  }
 }

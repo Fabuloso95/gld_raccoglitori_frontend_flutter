@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 const String _baseUrl = "http://localhost:8080/api/auth";
@@ -107,8 +108,25 @@ class AuthRepository
 
   int? getUserIdFromToken(String token) 
   {
-    final payload = decodeJwt(token);
-    return payload?['userId'] as int?;
+    try 
+    {
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        return null;
+      }
+      
+      final payload = parts[1];
+      final normalized = base64Url.normalize(payload);
+      final decoded = utf8.decode(base64Url.decode(normalized));
+      final payloadMap = json.decode(decoded);
+      
+      return payloadMap['userId'] as int?;
+    } 
+    catch (e) 
+    {
+      debugPrint('Errore decodifica token: $e');
+      return null;
+    }
   }
 
   void dispose() {client.close();}
