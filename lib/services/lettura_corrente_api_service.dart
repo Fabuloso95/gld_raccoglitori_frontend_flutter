@@ -1,32 +1,24 @@
 import 'dart:convert';
-import 'package:gld_raccoglitori/models/LetturaCorrenteRequestModel.dart';
-import 'package:gld_raccoglitori/models/LetturaCorrenteUpdateRequestModel.dart';
 import 'package:http/http.dart' as http;
+import '../models/LetturaCorrenteRequestModel.dart';
+import '../models/LetturaCorrenteUpdateRequestModel.dart';
 import '../models/lettura_corrente__progress_response.dart';
 import '../models/lettura_corrente_response.dart';
+import '../repository/lettura_corrente_repository.dart';
+import 'auth_client.dart';
+import 'auth_service.dart';
 
 class LetturaCorrenteApiService 
 {
-  final String baseUrl;
-  final String? authToken;
+  final AuthClient _httpClient;
+  final LetturaCorrenteRepository _repository;
 
-  LetturaCorrenteApiService({required this.baseUrl, this.authToken});
+  LetturaCorrenteApiService({
+    required AuthService authService,
+    required String baseUrl,
+  })  : _httpClient = AuthClient(http.Client(), authService),
+        _repository = LetturaCorrenteRepository(baseUrl: baseUrl);
 
-  // Headers comuni per tutte le richieste
-  Map<String, String> get _headers 
-  {
-    final headers = 
-    {
-      'Content-Type': 'application/json',
-    };
-    if (authToken != null) 
-    {
-      headers['Authorization'] = 'Bearer $authToken';
-    }
-    return headers;
-  }
-
-  // Gestione errori
   void _handleError(http.Response response) 
   {
     switch (response.statusCode) 
@@ -46,16 +38,9 @@ class LetturaCorrenteApiService
     }
   }
 
-  // Crea una nuova lettura
   Future<LetturaCorrenteResponse> startReading(LetturaCorrenteRequestModel request) async 
   {
-    final url = Uri.parse('$baseUrl/api/letture');
-    
-    final response = await http.post(
-      url,
-      headers: _headers,
-      body: json.encode(request.toJson()),
-    );
+    final response = await _repository.startReading(request.toJson());
 
     if (response.statusCode == 201) 
     {
@@ -69,21 +54,15 @@ class LetturaCorrenteApiService
     }
   }
 
-  // Ottiene una lettura per ID
   Future<LetturaCorrenteResponse> getReadingById(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/letture/$id');
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.getReadingById(id);
 
     if (response.statusCode == 200) 
     {
       final Map<String, dynamic> responseData = json.decode(response.body);
       return LetturaCorrenteResponse.fromJson(responseData);
-    }
+    } 
     else 
     {
       _handleError(response);
@@ -91,19 +70,11 @@ class LetturaCorrenteApiService
     }
   }
 
-  // Ottiene i progessi della lettura corrente
   Future<List<LetturaCorrenteProgressResponse>> getBookProgressOverview({
     required int libroId,
   }) async 
   {
-    final url = Uri.parse(
-      '$baseUrl/api/letture/libro/$libroId/progressi'
-    );
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.getBookProgressOverview(libroId);
 
     if (response.statusCode == 200) 
     {
@@ -119,15 +90,9 @@ class LetturaCorrenteApiService
     }
   }
 
-  // Ottiene le mie letture
   Future<List<LetturaCorrenteResponse>> getMyReadings() async 
   {
-    final url = Uri.parse('$baseUrl/api/letture/me');
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.getMyReadings();
 
     if (response.statusCode == 200) 
     {
@@ -143,18 +108,14 @@ class LetturaCorrenteApiService
     }
   }
 
-  // Aggiorna i progressi di una lettura
   Future<LetturaCorrenteResponse> updateProgress({
     required int id,
     required LetturaCorrenteUpdateRequestModel request,
   }) async 
   {
-    final url = Uri.parse('$baseUrl/api/letture/$id/progress');
-
-    final response = await http.put(
-      url,
-      headers: _headers,
-      body: json.encode(request.toJson()),
+    final response = await _repository.updateProgress(
+      id: id,
+      requestBody: request.toJson(),
     );
 
     if (response.statusCode == 200) 
@@ -169,17 +130,11 @@ class LetturaCorrenteApiService
     }
   }
 
-  // Aggiorna il completamento di una lettura
   Future<LetturaCorrenteResponse> completeReading({
     required int id,
   }) async 
   {
-    final url = Uri.parse('$baseUrl/api/letture/$id/complete');
-
-    final response = await http.put(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.completeReading(id);
 
     if (response.statusCode == 200) 
     {
@@ -193,24 +148,23 @@ class LetturaCorrenteApiService
     }
   }
 
-  // Elimina una lettura
   Future<void> deleteReading(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/letture/$id');
-    
-    final response = await http.delete(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.deleteReading(id);
 
     if (response.statusCode == 204) 
     {
-      return; // Successo - nessun contenuto
+      return;
     } 
     else 
     {
       _handleError(response);
       throw Exception('Errore nell\'eliminazione della lettura corrente');
     }
+  }
+
+  void dispose() 
+  {
+    _repository.dispose();
   }
 }

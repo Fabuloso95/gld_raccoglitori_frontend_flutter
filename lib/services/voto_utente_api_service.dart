@@ -1,30 +1,22 @@
 import 'dart:convert';
+import 'package:gld_raccoglitori/models/voto_utente_response.dart';
+import 'package:gld_raccoglitori/repository/voto_utente_repository.dart';
 import 'package:http/http.dart' as http;
-import '../models/voto_utente_response.dart';
+import 'auth_client.dart';
+import 'auth_service.dart';
 
 class VotoUtenteApiService 
 {
-  final String baseUrl;
-  final String? authToken;
+  final AuthClient _httpClient;
+  final VotoUtenteRepository _repository;
 
-  VotoUtenteApiService({required this.baseUrl, this.authToken});
+  VotoUtenteApiService({
+    required AuthService authService,
+    required String baseUrl,
+  })  : _httpClient = AuthClient(http.Client(), authService),
+        _repository = VotoUtenteRepository(baseUrl: baseUrl);
 
-  // Headers comuni per tutte le richieste
-  Map<String, String> get _headers 
-  {
-    final headers = 
-    {
-      'Content-Type': 'application/json',
-    };
-    if (authToken != null) 
-    {
-      headers['Authorization'] = 'Bearer $authToken';
-    }
-    return headers;
-  }
-
-  // Gestione errori
-  void _handleError(http.Response response) 
+  void _handleError(dynamic response) 
   {
     switch (response.statusCode) 
     {
@@ -43,21 +35,15 @@ class VotoUtenteApiService
     }
   }
 
-  // Ottiene un voto tramite ID
   Future<VotoUtenteResponse> findById(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/voti/$id');
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.findById(id);
 
     if (response.statusCode == 200) 
     {
       final Map<String, dynamic> responseData = json.decode(response.body);
       return VotoUtenteResponse.fromJson(responseData);
-    }
+    } 
     else 
     {
       _handleError(response);
@@ -65,15 +51,9 @@ class VotoUtenteApiService
     }
   }
 
-  // Ottiene un voto se esiste
   Future<List<VotoUtenteResponse>> checkExistingVote({required String meseVotazione}) async 
   {
-    final url = Uri.parse('$baseUrl/api/voti/check/mese/$meseVotazione');
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.checkExistingVote(meseVotazione);
 
     if (response.statusCode == 200) 
     {
@@ -85,11 +65,16 @@ class VotoUtenteApiService
     else if (response.statusCode == 204) 
     {
       return [];
-    }
+    } 
     else 
     {
       _handleError(response);
       throw Exception('Errore nel recupero del voto esistente in base al mese');
     }
+  }
+
+  void dispose() 
+  {
+    _repository.dispose();
   }
 }

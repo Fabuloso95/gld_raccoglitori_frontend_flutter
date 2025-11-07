@@ -1,12 +1,22 @@
 // main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'screens/book_details_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/registration_screen.dart';
 import 'screens/home_screen.dart';
 import 'services/auth_service.dart';
+import 'services/commenti_api_service.dart';
+import 'services/curiosita_api_service.dart';
+import 'services/frase_preferita_api_service.dart';
+import 'services/lettura_corrente_api_service.dart';
+import 'services/libro_api_service.dart';
+import 'services/messaggio_chat_api_service.dart';
+import 'services/proposta_voto_api_service.dart';
 import 'services/raccoglitori_api_service.dart';
+import 'services/utente_api_service.dart';
+import 'services/voto_utente_api_service.dart';
 
 void main() {
   runApp(
@@ -17,6 +27,87 @@ void main() {
           create: (context) {
             final authService = context.read<AuthService>();
             return RaccoglitoriApiService(authService);
+          },
+        ),
+        Provider<CommentiApiService>(
+          create: (context) {
+            final authService = context.read<AuthService>();
+            return CommentiApiService(
+              authService: authService,
+              baseUrl: "http://localhost:8080",
+            );
+          },
+        ),
+        Provider<CuriositaApiService>(
+          create: (context) {
+            final authService = context.read<AuthService>();
+            return CuriositaApiService(
+              authService: authService,
+              baseUrl: "http://localhost:8080",
+            );
+          },
+        ),
+        Provider<FrasePreferitaApiService>(
+          create: (context) {
+            final authService = context.read<AuthService>();
+            return FrasePreferitaApiService(
+              authService: authService,
+              baseUrl: "http://localhost:8080",
+            );
+          },
+        ),
+        Provider<LetturaCorrenteApiService>(
+          create: (context) {
+            final authService = context.read<AuthService>();
+            return LetturaCorrenteApiService(
+              authService: authService,
+              baseUrl: "http://localhost:8080",
+            );
+          },
+        ),
+        Provider<LibroApiService>(
+          create: (context) {
+            final authService = context.read<AuthService>();
+            return LibroApiService(
+              authService: authService,
+              baseUrl: "http://localhost:8080",
+            );
+          },
+        ),
+        Provider<MessaggioChatApiService>(
+          create: (context) {
+            final authService = context.read<AuthService>();
+            return MessaggioChatApiService(
+              authService: authService,
+              baseUrl: "http://localhost:8080",
+            );
+          },
+        ),
+        Provider<PropostaVotoApiService>(
+          create: (context) {
+            final authService = context.read<AuthService>();
+            return PropostaVotoApiService(
+              authService: authService,
+              baseUrl: "http://localhost:8080",
+            );
+          },
+        ),
+        Provider<UtenteApiService>(
+          create: (context) {
+            final authService = context.read<AuthService>();
+            return UtenteApiService(
+              authService: authService,
+              baseUrl: "http://localhost:8080",
+            );
+          },
+        ),
+        Provider<VotoUtenteApiService>(
+          create: (context) {
+            final authService = context.read<AuthService>();
+            return VotoUtenteApiService(
+              authService: authService,
+              baseUrl: "http://localhost:8080",
+            );
           },
         ),
       ],
@@ -58,7 +149,7 @@ class GDLApp extends StatelessWidget {
         // Puoi caricare screen on-demand per performance
         switch (settings.name) {
           //case '/book-details':
-           // return MaterialPageRoute(builder: (_) => const BookDetailsScreen());
+            //return MaterialPageRoute(builder: (_) => const BookDetailsScreen(bookId: ,));
           //case '/voting':
            // return MaterialPageRoute(builder: (_) => const VotingScreen());
           // Aggiungi altre routes lazy qui...

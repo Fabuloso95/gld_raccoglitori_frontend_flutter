@@ -30,7 +30,7 @@ class UtenteResponse
       email: json['email'] as String,
       nome: json['nome'] as String,
       cognome: json['cognome'] as String,
-      ruolo: json['ruolo'] as RuoloResponse,
+      ruolo: RuoloResponse.fromJson(json['ruolo']),
       dataRegistrazione: DateTime.parse(json['dataRegistrazione'] as String),
       attivo: json['attivo'] as bool,
     );

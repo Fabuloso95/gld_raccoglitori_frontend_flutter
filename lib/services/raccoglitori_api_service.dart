@@ -1,8 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'auth_client.dart';
 import 'auth_service.dart';
-import 'dart:io';
 
 // URL di base per le risorse PROTETTE
 const String _apiBaseUrl = "http://localhost:8080/api/raccoglitori"; 
@@ -19,7 +19,7 @@ class Raccoglitore
   factory Raccoglitore.fromJson(Map<String, dynamic> json) 
   {
     return Raccoglitore(
-      id: json['id'] ?? 0, // Usiamo 0 come fallback
+      id: json['id'] ?? 0,
       nome: json['nome'] ?? '',
       cognome: json['cognome'] ?? '',
     );
@@ -30,16 +30,15 @@ class RaccoglitoriApiService
 {
   final AuthClient _httpClient;
 
-  // Il costruttore riceve l'AuthService per ottenere il token e la funzione di refresh
   RaccoglitoriApiService(AuthService authService) 
     : _httpClient = AuthClient(
         http.Client(), 
-        authService.refreshAccessToken, // Funzione di refresh
-        authService
+        authService,
       );
 
-  // Esempio: Chiamata API Protetta GET
-  Future<List<Raccoglitore>> getElencoRaccoglitori() async {
+  // Chiamata API Protetta GET
+  Future<List<Raccoglitore>> getElencoRaccoglitori() async 
+  {
     final url = Uri.parse('$_apiBaseUrl/tutti');
     
     try 
@@ -51,10 +50,9 @@ class RaccoglitoriApiService
       {
         final List<dynamic> jsonList = json.decode(utf8.decode(response.bodyBytes));
         return jsonList.map((json) => Raccoglitore.fromJson(json)).toList();
-      }
+      } 
       else 
       {
-        // Se la risposta non è 200 (es. 403 Forbidden)
         throw Exception('Errore nel caricamento dei raccoglitori: Status ${response.statusCode}');
       }
     } 
@@ -64,12 +62,11 @@ class RaccoglitoriApiService
     } 
     catch (e) 
     {
-      // Errori generici o eccezioni lanciate dall'interceptor
       throw Exception('Errore di chiamata API protetta: ${e.toString()}');
     }
   }
 
-  // Esempio: Chiamata API Protetta POST
+  // Chiamata API Protetta POST
   Future<Raccoglitore> createRaccoglitore(String nome, String cognome) async 
   {
     final url = Uri.parse('$_apiBaseUrl/crea');

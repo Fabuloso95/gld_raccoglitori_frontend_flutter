@@ -1,30 +1,27 @@
 import 'dart:convert';
+import 'package:gld_raccoglitori/models/UtenteRequestModel.dart';
+import 'package:gld_raccoglitori/models/UtenteUpdateRequestModel.dart';
+import 'package:gld_raccoglitori/models/utente_response.dart';
+import 'package:gld_raccoglitori/repository/utente_repository.dart';
 import 'package:http/http.dart' as http;
-import '../models/UtenteRequestModel.dart';
-import '../models/UtenteUpdateRequestModel.dart';
-import '../models/utente_response.dart';
+import 'auth_client.dart';
+import 'auth_service.dart';
 
 class UtenteApiService 
 {
-  final String baseUrl;
-  final String? authToken;
+  final AuthClient _httpClient;
+  final UtenteRepository _repository;
 
-  UtenteApiService({required this.baseUrl, this.authToken});
+  UtenteApiService({
+    required AuthService authService,
+    required String baseUrl,
+  })  : _httpClient = AuthClient(http.Client(), authService),
+        _repository = UtenteRepository(baseUrl: baseUrl);
 
-  // Headers comuni per tutte le richieste
-  Map<String, String> get _headers {
-    final headers = {
-      'Content-Type': 'application/json',
-    };
-    if (authToken != null) {
-      headers['Authorization'] = 'Bearer $authToken';
-    }
-    return headers;
-  }
-
-  // Gestione errori
-  void _handleError(http.Response response) {
-    switch (response.statusCode) {
+  void _handleError(dynamic response) 
+  {
+    switch (response.statusCode) 
+    {
       case 400:
         throw Exception('Richiesta non valida: ${response.body}');
       case 401:
@@ -42,22 +39,15 @@ class UtenteApiService
     }
   }
 
-  // Crea un nuovo utente
   Future<UtenteResponse> createUtente(UtenteRequestModel request) async 
   {
-    final url = Uri.parse('$baseUrl/api/utenti');
-    
-    final response = await http.post(
-      url,
-      headers: _headers,
-      body: json.encode(request.toJson()),
-    );
+    final response = await _repository.createUtente(request.toJson());
 
     if (response.statusCode == 201) 
     {
       final Map<String, dynamic> responseData = json.decode(response.body);
       return UtenteResponse.fromJson(responseData);
-    }
+    } 
     else 
     {
       _handleError(response);
@@ -65,15 +55,9 @@ class UtenteApiService
     }
   }
 
-  // Ottiene tutti gli utenti
   Future<List<UtenteResponse>> getAllUtenti() async 
   {
-    final url = Uri.parse('$baseUrl/api/utenti');
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.getAllUtenti();
 
     if (response.statusCode == 200) 
     {
@@ -89,15 +73,9 @@ class UtenteApiService
     }
   }
 
-  // Ottiene un utente per ID
   Future<UtenteResponse> getUtenteById(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/utenti/$id');
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.getUtenteById(id);
 
     if (response.statusCode == 200) 
     {
@@ -111,15 +89,14 @@ class UtenteApiService
     }
   }
 
-  // Aggiorna un utente
-  Future<UtenteResponse> updateUtente({required int id, required UtenteUpdateRequestModel request}) async 
+  Future<UtenteResponse> updateUtente({
+    required int id,
+    required UtenteUpdateRequestModel request,
+  }) async 
   {
-    final url = Uri.parse('$baseUrl/api/utenti/$id');
-
-    final response = await http.put(
-      url,
-      headers: _headers,
-      body: json.encode(request.toJson()),
+    final response = await _repository.updateUtente(
+      id: id,
+      requestBody: request.toJson(),
     );
 
     if (response.statusCode == 200) 
@@ -134,15 +111,9 @@ class UtenteApiService
     }
   }
 
-  // Elimina un utente
   Future<void> deleteUtente(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/utenti/$id');
-    
-    final response = await http.delete(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.deleteUtente(id);
 
     if (response.statusCode == 204) 
     {
@@ -155,15 +126,9 @@ class UtenteApiService
     }
   }
 
-  // Attiva un utente
   Future<UtenteResponse> attivaUtente(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/utenti/$id/attiva');
-
-    final response = await http.patch(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.attivaUtente(id);
 
     if (response.statusCode == 200) 
     {
@@ -177,15 +142,9 @@ class UtenteApiService
     }
   }
 
-  // Disattiva un utente
   Future<UtenteResponse> disattivaUtente(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/utenti/$id/disattiva');
-
-    final response = await http.patch(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.disattivaUtente(id);
 
     if (response.statusCode == 200) 
     {
@@ -199,14 +158,14 @@ class UtenteApiService
     }
   }
 
-  // Cambia ruolo di un utente
-  Future<UtenteResponse> cambiaRuolo({required int id, required String nuovoRuolo}) async 
+  Future<UtenteResponse> cambiaRuolo({
+    required int id,
+    required String nuovoRuolo,
+  }) async 
   {
-    final url = Uri.parse('$baseUrl/api/utenti/$id/ruolo?nuovoRuolo=$nuovoRuolo');
-
-    final response = await http.patch(
-      url,
-      headers: _headers,
+    final response = await _repository.cambiaRuolo(
+      id: id,
+      nuovoRuolo: nuovoRuolo,
     );
 
     if (response.statusCode == 200) 
@@ -221,15 +180,9 @@ class UtenteApiService
     }
   }
 
-  // Cerca utenti per termine
   Future<List<UtenteResponse>> searchUtenti(String term) async 
   {
-    final url = Uri.parse('$baseUrl/api/utenti/cerca?term=${Uri.encodeComponent(term)}');
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.searchUtenti(term);
 
     if (response.statusCode == 200) 
     {
@@ -245,15 +198,9 @@ class UtenteApiService
     }
   }
 
-  // Filtra utenti per ruolo
   Future<List<UtenteResponse>> findByRuolo(String ruolo) async 
   {
-    final url = Uri.parse('$baseUrl/api/utenti/filtra/ruolo?ruolo=$ruolo');
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.findByRuolo(ruolo);
 
     if (response.statusCode == 200) 
     {
@@ -269,15 +216,9 @@ class UtenteApiService
     }
   }
 
-  // Richiedi reset password
   Future<void> forgotPassword(String email) async 
   {
-    final url = Uri.parse('$baseUrl/api/utenti/password/dimenticata?email=${Uri.encodeComponent(email)}');
-
-    final response = await http.post(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.forgotPassword(email);
 
     if (response.statusCode == 202) 
     {
@@ -290,14 +231,14 @@ class UtenteApiService
     }
   }
 
-  // Reset password con token
-  Future<void> resetPassword({required String token, required String nuovaPassword}) async 
+  Future<void> resetPassword({
+    required String token,
+    required String nuovaPassword,
+  }) async 
   {
-    final url = Uri.parse('$baseUrl/api/utenti/password/reset?token=${Uri.encodeComponent(token)}&nuovaPassword=${Uri.encodeComponent(nuovaPassword)}');
-
-    final response = await http.post(
-      url,
-      headers: _headers,
+    final response = await _repository.resetPassword(
+      token: token,
+      nuovaPassword: nuovaPassword,
     );
 
     if (response.statusCode == 200) 
@@ -309,5 +250,10 @@ class UtenteApiService
       _handleError(response);
       throw Exception('Errore nel reset della password');
     }
+  }
+
+  void dispose() 
+  {
+    _repository.dispose();
   }
 }

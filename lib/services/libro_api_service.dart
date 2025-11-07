@@ -1,30 +1,22 @@
 import 'dart:convert';
-import 'package:gld_raccoglitori/models/LibroRequestModel.dart';
 import 'package:http/http.dart' as http;
+import '../models/LibroRequestModel.dart';
 import '../models/libro_response.dart';
+import '../repository/libro_repository.dart';
+import 'auth_client.dart';
+import 'auth_service.dart';
 
 class LibroApiService 
 {
-  final String baseUrl;
-  final String? authToken;
+  final AuthClient _httpClient;
+  final LibroRepository _repository;
 
-  LibroApiService({required this.baseUrl, this.authToken});
+  LibroApiService({
+    required AuthService authService,
+    required String baseUrl,
+  })  : _httpClient = AuthClient(http.Client(), authService),
+        _repository = LibroRepository(baseUrl: baseUrl);
 
-  // Headers comuni per tutte le richieste
-  Map<String, String> get _headers 
-  {
-    final headers = 
-    {
-      'Content-Type': 'application/json',
-    };
-    if (authToken != null) 
-    {
-      headers['Authorization'] = 'Bearer $authToken';
-    }
-    return headers;
-  }
-
-  // Gestione errori
   void _handleError(http.Response response) 
   {
     switch (response.statusCode) 
@@ -46,16 +38,9 @@ class LibroApiService
     }
   }
 
-  // Crea un nuovo libro
   Future<LibroResponse> creaLibro(LibroRequestModel request) async 
   {
-    final url = Uri.parse('$baseUrl/api/libri');
-    
-    final response = await http.post(
-      url,
-      headers: _headers,
-      body: json.encode(request.toJson()),
-    );
+    final response = await _repository.creaLibro(request.toJson());
 
     if (response.statusCode == 201) 
     {
@@ -69,21 +54,15 @@ class LibroApiService
     }
   }
 
-  // Ottiene un libro tramite ID
   Future<LibroResponse> getLibroById(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/libri/$id');
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.getLibroById(id);
 
     if (response.statusCode == 200) 
     {
       final Map<String, dynamic> responseData = json.decode(response.body);
       return LibroResponse.fromJson(responseData);
-    }
+    } 
     else 
     {
       _handleError(response);
@@ -91,26 +70,11 @@ class LibroApiService
     }
   }
 
-  // Ottiene tutti i libri o effettua una ricerca
   Future<List<LibroResponse>> getAllLibriOrSearch({
     String? searchTerm,
   }) async 
   {
-    final Uri url;
-    
-    if (searchTerm != null && searchTerm.isNotEmpty) 
-    {
-      url = Uri.parse('$baseUrl/api/libri?searchTerm=${Uri.encodeComponent(searchTerm)}');
-    } 
-    else 
-    {
-      url = Uri.parse('$baseUrl/api/libri');
-    }
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.getAllLibriOrSearch(searchTerm: searchTerm);
 
     if (response.statusCode == 200) 
     {
@@ -126,18 +90,14 @@ class LibroApiService
     }
   }
 
-  // Aggiorna i progressi di un libro
   Future<LibroResponse> aggiornaLibro({
     required int id,
     required LibroRequestModel request,
   }) async 
   {
-    final url = Uri.parse('$baseUrl/api/libri/$id');
-
-    final response = await http.put(
-      url,
-      headers: _headers,
-      body: json.encode(request.toJson()),
+    final response = await _repository.aggiornaLibro(
+      id: id,
+      requestBody: request.toJson(),
     );
 
     if (response.statusCode == 200) 
@@ -152,24 +112,23 @@ class LibroApiService
     }
   }
 
-  // Elimina un libro
   Future<void> eliminaLibro(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/libri/$id');
-    
-    final response = await http.delete(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.eliminaLibro(id);
 
     if (response.statusCode == 204) 
     {
-      return; // Successo - nessun contenuto
+      return;
     } 
     else 
     {
       _handleError(response);
       throw Exception('Errore nell\'eliminazione di un libro');
     }
+  }
+
+  void dispose() 
+  {
+    _repository.dispose();
   }
 }

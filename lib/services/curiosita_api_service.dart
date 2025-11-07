@@ -1,34 +1,26 @@
+// services/curiosita_api_service.dart
 import 'dart:convert';
-import 'package:gld_raccoglitori/models/CuriositaRequestModel.dart';
 import 'package:http/http.dart' as http;
+import '../models/CuriositaRequestModel.dart';
 import '../models/curiosita_response.dart';
+import '../repository/curiosita_repository.dart';
+import 'auth_client.dart';
+import 'auth_service.dart';
 
 class CuriositaApiService 
 {
-  final String baseUrl;
-  final String? authToken;
+  final AuthClient _httpClient;
+  final CuriositaRepository _repository;
 
-  CuriositaApiService({required this.baseUrl, this.authToken});
+  CuriositaApiService({
+    required AuthService authService,
+    required String baseUrl,
+  })  : _httpClient = AuthClient(http.Client(), authService),
+        _repository = CuriositaRepository(baseUrl: baseUrl);
 
-  // Headers comuni per tutte le richieste
-  Map<String, String> get _headers 
-  {
-    final headers = 
-    {
-      'Content-Type': 'application/json',
-    };
-    if (authToken != null) 
-    {
-      headers['Authorization'] = 'Bearer $authToken';
-    }
-    return headers;
-  }
-
-  // Gestione errori
   void _handleError(http.Response response) 
   {
-    switch (response.statusCode) 
-    {
+    switch (response.statusCode) {
       case 400:
         throw Exception('Richiesta non valida: ${response.body}');
       case 401:
@@ -44,16 +36,9 @@ class CuriositaApiService
     }
   }
 
-  // Crea una nuova curiosità
   Future<CuriositaResponse> createCuriosita(CuriositaRequestModel request) async 
   {
-    final url = Uri.parse('$baseUrl/api/curiosita');
-    
-    final response = await http.post(
-      url,
-      headers: _headers,
-      body: json.encode(request.toJson()),
-    );
+    final response = await _repository.createCuriosita(request.toJson());
 
     if (response.statusCode == 201) 
     {
@@ -67,41 +52,27 @@ class CuriositaApiService
     }
   }
 
-  // Ottiene una curiosità per ID
   Future<CuriositaResponse> getCuriositaById(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/curiosita/$id');
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.getCuriositaById(id);
 
     if (response.statusCode == 200) 
     {
       final Map<String, dynamic> responseData = json.decode(response.body);
       return CuriositaResponse.fromJson(responseData);
-    }
-    else 
+    } 
+    else
     {
       _handleError(response);
       throw Exception('Errore nel recupero della curiosità');
     }
   }
 
-  // Ottiene una curiosità per libro
   Future<List<CuriositaResponse>> getCuriositaByLibro({
     required int libroId,
   }) async 
   {
-    final url = Uri.parse(
-      '$baseUrl/api/curiosita/libro/$libroId'
-    );
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.getCuriositaByLibro(libroId);
 
     if (response.statusCode == 200) 
     {
@@ -117,14 +88,14 @@ class CuriositaApiService
     }
   }
 
-  // Ottiene una curiosità tramite libro e pagina
-  Future<List<CuriositaResponse>> getCuriositaByLibroAndPagina(int libroId, int paginaRiferimento) async 
+  Future<List<CuriositaResponse>> getCuriositaByLibroAndPagina({
+    required int libroId,
+    required int paginaRiferimento,
+  }) async 
   {
-    final url = Uri.parse('$baseUrl/api/curiosita/libro/$libroId/pagina/$paginaRiferimento');
-    
-    final response = await http.get(
-      url,
-      headers: _headers,
+    final response = await _repository.getCuriositaByLibroAndPagina(
+      libroId: libroId,
+      paginaRiferimento: paginaRiferimento,
     );
 
     if (response.statusCode == 200) 
@@ -141,18 +112,14 @@ class CuriositaApiService
     }
   }
 
-  // Aggiorna il contenuto di una curiosità
   Future<CuriositaResponse> updateCuriosita({
     required int id,
     required CuriositaRequestModel request,
   }) async 
   {
-    final url = Uri.parse('$baseUrl/api/curiosita/$id');
-    
-    final response = await http.put(
-      url,
-      headers: _headers,
-      body: json.encode(request.toJson()),
+    final response = await _repository.updateCuriosita(
+      id: id,
+      requestBody: request.toJson(),
     );
 
     if (response.statusCode == 200) 
@@ -163,28 +130,27 @@ class CuriositaApiService
     else 
     {
       _handleError(response);
-      throw Exception('Errore nell\'aggiornamento della curiosità'); // Cambiato messaggio
+      throw Exception('Errore nell\'aggiornamento della curiosità');
     }
   }
 
-  // Elimina un commento
   Future<void> deleteCuriosita(int id) async 
   {
-    final url = Uri.parse('$baseUrl/api/curiosita/$id');
-    
-    final response = await http.delete(
-      url,
-      headers: _headers,
-    );
+    final response = await _repository.deleteCuriosita(id);
 
     if (response.statusCode == 204) 
     {
-      return; // Successo - nessun contenuto
+      return;
     } 
     else 
     {
       _handleError(response);
       throw Exception('Errore nell\'eliminazione della curiosità');
     }
+  }
+
+  void dispose() 
+  {
+    _repository.dispose();
   }
 }
