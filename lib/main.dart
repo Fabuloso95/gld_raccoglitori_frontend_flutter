@@ -15,6 +15,7 @@ import 'screens/lista_utenti_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/registration_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/votazioni_screen.dart';
 import 'services/auth_service.dart';
 import 'services/commenti_api_service.dart';
 import 'services/curiosita_api_service.dart';
@@ -33,6 +34,7 @@ import 'view_models/curiosita_view_model.dart';
 import 'view_models/frase_preferita_view_model.dart';
 import 'view_models/lettura_corrente_view_model.dart';
 import 'view_models/libro_view_model.dart';
+import 'view_models/proposta_voto_view_model.dart';
 import 'view_models/utente_view_model.dart';
 
 void main() 
@@ -176,6 +178,13 @@ void main()
             return LibroViewModel(libroService);
           },
         ),
+        ChangeNotifierProvider<PropostaVotoViewModel>(
+          create: (context) {
+            final propostaService = context.read<PropostaVotoApiService>();
+            final authService = context.read<AuthService>();
+            return PropostaVotoViewModel(propostaService, authService);
+          },
+        ),
       ],
       child: const GDLApp(),
     ),
@@ -216,6 +225,7 @@ class GDLApp extends StatelessWidget {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
           return DettaglioLibroScreen(libroId: args['libroId']);
         },
+        '/votazioni': (context) => const VotazioniScreen(),
       },
       
       // ✅ LAZY LOADING (simile a loadChildren in Angular)
@@ -294,6 +304,8 @@ class GDLApp extends StatelessWidget {
                   return MaterialPageRoute(
                     builder: (_) => DettaglioLibroScreen(libroId: args['libroId']),
                   );
+          case '/votazioni':
+            return MaterialPageRoute(builder: (_) => const VotazioniScreen());
           //case '/book-details':
             //return MaterialPageRoute(builder: (_) => const BookDetailsScreen(bookId: ,));
           //case '/voting':
