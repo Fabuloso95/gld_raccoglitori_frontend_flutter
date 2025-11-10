@@ -22,15 +22,23 @@ import 'services/proposta_voto_api_service.dart';
 import 'services/raccoglitori_api_service.dart';
 import 'services/utente_api_service.dart';
 import 'services/voto_utente_api_service.dart';
+import 'view_models/auth_view_model.dart';
 import 'view_models/chat_view_model.dart';
 import 'view_models/commenti_view_model.dart';
 import 'view_models/utente_view_model.dart';
 
-void main() {
+void main() 
+{
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
+        Provider<AuthService>(create: (_) => AuthService()),
+        ChangeNotifierProvider<AuthViewModel>(
+          create: (context) {
+            final authService = context.read<AuthService>();
+            return AuthViewModel(authService);
+          },
+        ),
         Provider<RaccoglitoriApiService>(
           create: (context) {
             final authService = context.read<AuthService>();
@@ -163,7 +171,7 @@ class GDLApp extends StatelessWidget {
       // ✅ ROUTING CONFIGURATION (simile a Angular RouterModule)
       initialRoute: '/', // Route iniziale
       routes: {
-        '/': (context) => const AuthWrapper(), // Gestisce login/auto-login
+        '/': (context) => const AuthWrapper(),
         '/dashboard': (context) => const DashboardScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegistrationScreen(),
@@ -226,15 +234,18 @@ class GDLApp extends StatelessWidget {
 }
 
 // ✅ ROUTE GUARD (simile a Angular CanActivate)
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatelessWidget 
+{
   const AuthWrapper({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context);
+  Widget build(BuildContext context) 
+  {
+    final authViewModel = Provider.of<AuthViewModel>(context);
     
     // Se l'utente è autenticato, va alla dashboard
-    if (authService.isAuthenticated) {
+    if (authViewModel.isAuthenticated) 
+    {
       return const DashboardScreen();
     }
     // Altrimenti alla login

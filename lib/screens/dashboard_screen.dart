@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/auth_service.dart';
 import '../services/lettura_corrente_api_service.dart';
 import '../services/proposta_voto_api_service.dart';
 import '../services/voto_utente_api_service.dart';
 import '../models/lettura_corrente_response.dart';
 import '../models/proposta_voto_response.dart';
 import '../models/voto_utente_response.dart';
+import '../view_models/auth_view_model.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends StatefulWidget 
+{
   const DashboardScreen({super.key});
 
   @override
@@ -46,15 +47,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return '${now.year}-${now.month.toString().padLeft(2, '0')}';
   }
 
-  Future<LetturaCorrenteResponse?> _getLetturaCorrente(LetturaCorrenteApiService service) async {
-  try {
+  Future<LetturaCorrenteResponse?> _getLetturaCorrente(LetturaCorrenteApiService service) async 
+  {
+  try 
+  {
     final letture = await service.getMyReadings();
     
-    if (letture.isEmpty) {
+    if (letture.isEmpty) 
+    {
       return null; 
     }
 
-    try {
+    try 
+    {
       final letturaNonCompletata = letture.firstWhere(
         (lettura) => lettura.dataCompletamento == null,
       );
@@ -65,7 +70,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return letture.last;
     }
     
-  } catch (e) {
+  } 
+  catch (e) 
+  {
     print('Errore caricamento lettura corrente: $e');
     return null;
   }
@@ -73,7 +80,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context);
+    final authViewModel = Provider.of<AuthViewModel>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -83,7 +90,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => authService.logout(),
+            onPressed: () => authViewModel.logout(),
             tooltip: 'Logout',
           ),
         ],
@@ -146,7 +153,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ✅ BENVENUTO UTENTE
-              _buildUserWelcome(authService),
+              _buildUserWelcome(authViewModel),
               const SizedBox(height: 24),
               
               // ✅ LIBRO VINCITORE DEL MESE
@@ -174,7 +181,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildUserWelcome(AuthService authService) {
+  Widget _buildUserWelcome(AuthViewModel authViewModel) 
+  {
     return Card(
       elevation: 2,
       child: Padding(
@@ -192,7 +200,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Benvenuto, ${authService.currentUsername}!',
+                    'Benvenuto, ${authViewModel.currentUsername}!',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -200,7 +208,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Ruolo: ${authService.currentRole ?? 'USER'}',
+                    'Ruolo: ${authViewModel.currentRole ?? 'USER'}',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],

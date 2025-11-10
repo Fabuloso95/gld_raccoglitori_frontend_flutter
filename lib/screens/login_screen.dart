@@ -1,54 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/auth_service.dart'; 
-import '../screens/registration_screen.dart';
+import 'package:gld_raccoglitori/view_models/auth_view_model.dart';
+import 'registration_screen.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends StatefulWidget 
+{
   const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> 
+{
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLoading = false;
+  bool _obscurePassword = true;
 
-  Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final errorMessage = await authService.login(
-      _usernameController.text.trim(),
-      _passwordController.text.trim(),
-    );
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (errorMessage != null) {
-      // Mostra un messaggio di errore
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage, style: const TextStyle(color: Colors.white)), backgroundColor: Colors.redAccent),
-      );
-    } 
-    // Se l'accesso è riuscito, il Consumer in main.dart naviga automaticamente ad HomeScreen
+  @override
+  void dispose() 
+  {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) 
+  {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Accesso GDL Raccoglitori'),
+        backgroundColor: const Color(0xFF1E88E5),
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(32.0),
@@ -67,6 +52,28 @@ class _LoginScreenState extends State<LoginScreen> {
                     size: 100,
                     color: Color(0xFF1E88E5),
                   ),
+                  const SizedBox(height: 20),
+                  
+                  // Titolo
+                  const Text(
+                    'Benvenuto',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E88E5),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  
+                  const Text(
+                    'Accedi al tuo account',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 40),
                   
                   // Campo Username/Email
@@ -74,11 +81,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _usernameController,
                     decoration: const InputDecoration(
                       labelText: 'Username o Email',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                      border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.person_outline),
+                      contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 15),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
+                    validator: (value) 
+                    {
+                      if (value == null || value.isEmpty) 
+                      {
                         return 'Inserisci username o email';
                       }
                       return null;
@@ -89,47 +99,166 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Campo Password
                   TextFormField(
                     controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
                       labelText: 'Password',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-                      prefixIcon: Icon(Icons.lock_outline),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () 
+                        {
+                          setState(() 
+                          {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
+                    validator: (value) 
+                    {
+                      if (value == null || value.isEmpty) 
+                      {
                         return 'Inserisci la password';
+                      }
+                      if (value.length < 6) 
+                      {
+                        return 'La password deve essere di almeno 6 caratteri';
                       }
                       return null;
                     },
                   ),
+                  const SizedBox(height: 10),
+                  
+                  // Link password dimenticata
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        // TODO: Implementare recupero password
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Funzionalità di recupero password in sviluppo'),
+                          ),
+                        );
+                      },
+                      child: const Text('Password dimenticata?'),
+                    ),
+                  ),
                   const SizedBox(height: 30),
                   
                   // Bottone di Login
-                  _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : ElevatedButton(
-                          onPressed: _handleLogin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E88E5),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          child: const Text(
-                            'Accedi',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Consumer<AuthViewModel>(
+                    builder: (context, viewModel, child) 
+                    {
+                      // Mostra errori
+                      if (viewModel.error != null) 
+                      {
+                        WidgetsBinding.instance.addPostFrameCallback((_) 
+                        {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(viewModel.error!),
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                          viewModel.clearError();
+                        });
+                      }
+                      
+                      // Mostra successo
+                      if (viewModel.successMessage != null) 
+                      {
+                        WidgetsBinding.instance.addPostFrameCallback((_) 
+                        {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(viewModel.successMessage!),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          viewModel.clearSuccess();
+                        });
+                      }
+                      
+                      return Column(
+                        children: [
+                          if (viewModel.isLoading)
+                            const CircularProgressIndicator()
+                          else
+                            ElevatedButton(
+                              onPressed: _handleLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1E88E5),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                elevation: 2,
+                              ),
+                              child: const Text(
+                                'Accedi',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Divisore
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: Colors.grey.shade300)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'OPPURE',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
+                      ),
+                      Expanded(child: Divider(color: Colors.grey.shade300)),
+                    ],
+                  ),
                   const SizedBox(height: 20),
                   
                   // Link per la Registrazione
-                  TextButton(
-                    onPressed: () {
+                  OutlinedButton(
+                    onPressed: () 
+                    {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const RegistrationScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const RegistrationScreen(),
+                        ),
                       );
                     },
-                    child: const Text('Non hai un account? Registrati ora'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      side: const BorderSide(color: Color(0xFF1E88E5)),
+                    ),
+                    child: const Text(
+                      'Crea un nuovo account',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF1E88E5),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -139,33 +268,24 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-}
 
-// Schermata placeholder per l'home, per completare il setup
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  Future<void> _handleLogin() async 
+  {
+    if (!_formKey.currentState!.validate()) 
+    {
+      return;
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard - GDL'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              authService.logout();
-            },
-          ),
-        ],
-      ),
-      body: Center(
-        child: Text(
-          'Benvenuto, ${authService.currentUsername} (${authService.currentRole})!',
-          style: const TextStyle(fontSize: 24),
-        ),
-      ),
+    final viewModel = context.read<AuthViewModel>();
+    final success = await viewModel.login(
+      _usernameController.text.trim(),
+      _passwordController.text.trim(),
     );
+
+    if (success) 
+    {
+      // La navigazione viene gestita automaticamente da AuthWrapper
+      _formKey.currentState?.reset();
+    }
   }
 }
