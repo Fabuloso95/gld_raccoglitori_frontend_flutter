@@ -6,6 +6,7 @@ import 'screens/chat_screen.dart';
 import 'screens/crea_utente_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/lista_chat_screen.dart';
+import 'screens/lista_commenti_screen.dart';
 import 'screens/lista_utenti_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/registration_screen.dart';
@@ -22,6 +23,7 @@ import 'services/raccoglitori_api_service.dart';
 import 'services/utente_api_service.dart';
 import 'services/voto_utente_api_service.dart';
 import 'view_models/chat_view_model.dart';
+import 'view_models/commenti_view_model.dart';
 import 'view_models/utente_view_model.dart';
 
 void main() {
@@ -128,6 +130,12 @@ void main() {
             return ChatViewModel(chatService);
           },
         ),
+        ChangeNotifierProvider<CommentiViewModel>(
+          create: (context) {
+            final commentiService = context.read<CommentiApiService>();
+            return CommentiViewModel(commentiService);
+          },
+        ),
       ],
       child: const GDLApp(),
     ),
@@ -191,6 +199,18 @@ class GDLApp extends StatelessWidget {
                 altroUtenteId: args['altroUtenteId'],
                 tipoChat: args['tipoChat'],
                 utenteCorrenteId: utenteCorrenteId,
+              ),
+            );
+          case '/commenti':
+            final args = settings.arguments as Map<String, dynamic>;
+            final authService = Provider.of<AuthService>(context, listen: false);
+            final utenteCorrenteId = authService.currentUserId ?? args['utenteCorrenteId'];
+            return MaterialPageRoute(
+              builder: (_) => ListaCommentiScreen(
+                letturaCorrenteId: args['letturaCorrenteId'],
+                paginaRiferimento: args['paginaRiferimento'],
+                titoloLettura: args['titoloLettura'],
+                utenteCorrenteId: utenteCorrenteId!,
               ),
             );
           //case '/book-details':

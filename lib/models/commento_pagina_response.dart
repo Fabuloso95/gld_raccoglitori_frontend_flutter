@@ -1,10 +1,12 @@
+import 'autore_commento_response.dart';
+
 class CommentoPaginaResponse 
 {
   final int id;
   final String contenuto;
   final int letturaCorrenteId;
   final int paginaRiferimento;
-  final int utente;
+  final AutoreCommentoResponse utente;
   final DateTime dataCreazione;
 
   CommentoPaginaResponse({
@@ -23,7 +25,7 @@ class CommentoPaginaResponse
       contenuto: json['contenuto'],
       letturaCorrenteId: json['letturaCorrenteId'],
       paginaRiferimento: json['paginaRiferimento'],
-      utente: json['utente'],
+      utente: AutoreCommentoResponse.fromJson(json['utente']),
       dataCreazione: DateTime.parse(json['dataCreazione']), 
     );
   }
