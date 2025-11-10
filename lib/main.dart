@@ -1,12 +1,16 @@
-// main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/book_details_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/crea_utente_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/dettaglio_libro_screen.dart';
+import 'screens/lettura_screen.dart';
 import 'screens/lista_chat_screen.dart';
 import 'screens/lista_commenti_screen.dart';
+import 'screens/lista_curiosita_screen.dart';
+import 'screens/lista_frasi_preferite_screen.dart';
+import 'screens/lista_libri_screen.dart';
 import 'screens/lista_utenti_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/registration_screen.dart';
@@ -25,6 +29,10 @@ import 'services/voto_utente_api_service.dart';
 import 'view_models/auth_view_model.dart';
 import 'view_models/chat_view_model.dart';
 import 'view_models/commenti_view_model.dart';
+import 'view_models/curiosita_view_model.dart';
+import 'view_models/frase_preferita_view_model.dart';
+import 'view_models/lettura_corrente_view_model.dart';
+import 'view_models/libro_view_model.dart';
 import 'view_models/utente_view_model.dart';
 
 void main() 
@@ -144,6 +152,30 @@ void main()
             return CommentiViewModel(commentiService);
           },
         ),
+        ChangeNotifierProvider<CuriositaViewModel>(
+          create: (context) {
+            final curiositaService = context.read<CuriositaApiService>();
+            return CuriositaViewModel(curiositaService);
+          },
+        ),
+        ChangeNotifierProvider<FrasePreferitaViewModel>(
+          create: (context) {
+            final frasePreferitaService = context.read<FrasePreferitaApiService>();
+            return FrasePreferitaViewModel(frasePreferitaService);
+          },
+        ),
+        ChangeNotifierProvider<LetturaCorrenteViewModel>(
+          create: (context) {
+            final letturaService = context.read<LetturaCorrenteApiService>();
+            return LetturaCorrenteViewModel(letturaService);
+          },
+        ),
+        ChangeNotifierProvider<LibroViewModel>(
+          create: (context) {
+            final libroService = context.read<LibroApiService>();
+            return LibroViewModel(libroService);
+          },
+        ),
       ],
       child: const GDLApp(),
     ),
@@ -178,6 +210,12 @@ class GDLApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/utenti': (context) => const ListaUtentiScreen(),
         '/chat': (context) => const ListaChatScreen(),
+        '/libri': (context) => const ListaLibriScreen(),
+        '/dettaglio-libro': (context) 
+        {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return DettaglioLibroScreen(libroId: args['libroId']);
+        },
       },
       
       // ✅ LAZY LOADING (simile a loadChildren in Angular)
@@ -221,6 +259,41 @@ class GDLApp extends StatelessWidget {
                 utenteCorrenteId: utenteCorrenteId!,
               ),
             );
+          case '/curiosita':
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (_) => ListaCuriositaScreen(
+                libroId: args['libroId'],
+                paginaRiferimento: args['paginaRiferimento'],
+                titoloLibro: args['titoloLibro'],
+              ),
+            );
+          case '/frasi-preferite':
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (_) => ListaFrasiPreferiteScreen(
+                libroId: args['libroId'],
+                titoloLibro: args['titoloLibro'],
+              ),
+            );
+          case '/lettura':
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (_) => LetturaScreen(
+                bookId: args['bookId'],
+                bookTitle: args['bookTitle'],
+                numeroPagineTotali: args['numeroPagineTotali'],
+              ),
+            );
+            case '/libri-da-leggere':
+                  return MaterialPageRoute(
+                    builder: (_) => const ListaLibriScreen(mostraSoloNonLetti: true),
+                  );
+                case '/dettaglio-libro':
+                  final args = settings.arguments as Map<String, dynamic>;
+                  return MaterialPageRoute(
+                    builder: (_) => DettaglioLibroScreen(libroId: args['libroId']),
+                  );
           //case '/book-details':
             //return MaterialPageRoute(builder: (_) => const BookDetailsScreen(bookId: ,));
           //case '/voting':
