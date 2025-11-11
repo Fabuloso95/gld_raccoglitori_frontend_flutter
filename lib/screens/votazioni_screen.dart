@@ -1,34 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:gld_raccoglitori/view_models/proposta_voto_view_model.dart';
+import 'package:gld_raccoglitori/view_models/voto_utente_view_model.dart';
 import 'package:gld_raccoglitori/view_models/libro_view_model.dart';
 import 'package:gld_raccoglitori/widgets/proposta_voto_card.dart';
 import 'package:gld_raccoglitori/widgets/seleziona_libro_dialog.dart';
 
-class VotazioniScreen extends StatefulWidget {
+class VotazioniScreen extends StatefulWidget 
+{
   const VotazioniScreen({super.key});
 
   @override
   State<VotazioniScreen> createState() => _VotazioniScreenState();
 }
 
-class _VotazioniScreenState extends State<VotazioniScreen> with SingleTickerProviderStateMixin {
+class _VotazioniScreenState extends State<VotazioniScreen> with SingleTickerProviderStateMixin 
+{
   late TabController _tabController;
 
   @override
-  void initState() {
+  void initState() 
+  {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _caricaProposteCorrenti();
   }
 
-  void _caricaProposteCorrenti() {
+  void _caricaProposteCorrenti() 
+  {
     final viewModel = context.read<PropostaVotoViewModel>();
     viewModel.caricaProposteMeseCorrente();
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) 
+  {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Votazioni Libri'),
@@ -62,27 +68,32 @@ class _VotazioniScreenState extends State<VotazioniScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildTabCorrente() {
-    return Consumer<PropostaVotoViewModel>(
-      builder: (context, viewModel, child) {
-        if (viewModel.isLoading && viewModel.proposteCorrenti.isEmpty) {
+  Widget _buildTabCorrente() 
+  {
+    return Consumer2<PropostaVotoViewModel, VotoUtenteViewModel>(
+      builder: (context, propostaVM, votoVM, child) 
+      {
+        if (propostaVM.isLoading && propostaVM.proposteCorrenti.isEmpty) 
+        {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (viewModel.error != null) {
+        if (propostaVM.error != null) 
+        {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Errore: ${viewModel.error}',
+                  'Errore: ${propostaVM.error}',
                   style: const TextStyle(color: Colors.red),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () {
-                    viewModel.clearError();
+                  onPressed: () 
+                  {
+                    propostaVM.clearError();
                     _caricaProposteCorrenti();
                   },
                   child: const Text('Riprova'),
@@ -94,18 +105,15 @@ class _VotazioniScreenState extends State<VotazioniScreen> with SingleTickerProv
 
         return Column(
           children: [
-            // Header con informazioni
-            _buildHeaderInfo(viewModel),
-            
-            // Lista proposte
+            _buildHeaderInfo(propostaVM, votoVM),
             Expanded(
-              child: viewModel.proposteCorrenti.isEmpty
+              child: propostaVM.proposteCorrenti.isEmpty
                   ? _buildEmptyState()
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
-                      itemCount: viewModel.proposteCorrenti.length,
+                      itemCount: propostaVM.proposteCorrenti.length,
                       itemBuilder: (context, index) {
-                        final proposta = viewModel.proposteCorrenti[index];
+                        final proposta = propostaVM.proposteCorrenti[index];
                         return PropostaVotoCard(proposta: proposta);
                       },
                     ),
@@ -116,7 +124,7 @@ class _VotazioniScreenState extends State<VotazioniScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildHeaderInfo(PropostaVotoViewModel viewModel) 
+  Widget _buildHeaderInfo(PropostaVotoViewModel propostaVM, VotoUtenteViewModel votoVM) 
   {
     return Card(
       margin: const EdgeInsets.all(16),
@@ -125,7 +133,7 @@ class _VotazioniScreenState extends State<VotazioniScreen> with SingleTickerProv
         child: Column(
           children: [
             Text(
-              'Votazioni ${viewModel.meseCorrente}',
+              'Votazioni ${propostaVM.meseCorrente}',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -137,20 +145,19 @@ class _VotazioniScreenState extends State<VotazioniScreen> with SingleTickerProv
               children: [
                 _buildInfoItem(
                   'Proposte',
-                  viewModel.proposteCorrenti.length.toString(),
+                  propostaVM.proposteCorrenti.length.toString(),
                   Icons.library_books,
                 ),
                 _buildInfoItem(
                   'Tuoi Voti',
-                  '${viewModel.votiUtenteCorrente}/${viewModel.maxVotiConsentiti}',
+                  '${votoVM.votiUtenteCorrente.length}/3',
                   Icons.how_to_vote,
                 ),
-                if (viewModel.vincitoreMeseCorrente != null)
-                  _buildInfoItem(
-                    'In Testa',
-                    viewModel.vincitoreMeseCorrente!.libroProposto.titolo,
-                    Icons.emoji_events,
-                  ),
+                _buildInfoItem(
+                  'Voti Rimanenti',
+                  votoVM.votiRimanenti.toString(),
+                  Icons.assignment_turned_in,
+                ),
               ],
             ),
           ],
@@ -223,7 +230,6 @@ class _VotazioniScreenState extends State<VotazioniScreen> with SingleTickerProv
     final propostaViewModel = context.read<PropostaVotoViewModel>();
     final libroViewModel = context.read<LibroViewModel>();
 
-    // Carica i libri se non sono già caricati
     if (libroViewModel.libri.isEmpty) 
     {
       libroViewModel.caricaLibri();
@@ -235,7 +241,8 @@ class _VotazioniScreenState extends State<VotazioniScreen> with SingleTickerProv
         onLibroSelezionato: (libro) async 
         {
           final success = await propostaViewModel.proponiLibro(libro.id);
-          if (success && mounted) {
+          if (success && mounted) 
+          {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('"${libro.titolo}" proposto con successo!')),
             );

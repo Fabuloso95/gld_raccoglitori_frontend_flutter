@@ -2,32 +2,27 @@ import 'package:flutter/foundation.dart';
 import 'package:gld_raccoglitori/models/PropostaVotoRequestModel.dart';
 import 'package:gld_raccoglitori/models/VotoUtenteRequestModel.dart';
 import 'package:gld_raccoglitori/models/proposta_voto_response.dart';
-import 'package:gld_raccoglitori/models/voto_utente_response.dart';
 import 'package:gld_raccoglitori/services/proposta_voto_api_service.dart';
-import 'package:gld_raccoglitori/services/auth_service.dart';
+import 'package:gld_raccoglitori/view_models/voto_utente_view_model.dart';
 
 class PropostaVotoViewModel extends ChangeNotifier 
 {
   final PropostaVotoApiService _propostaVotoService;
-  final AuthService _authService;
+  final VotoUtenteViewModel _votoUtenteViewModel;
 
-  // Stato dell'applicazione
   List<PropostaVotoResponse> _proposteCorrenti = [];
   List<PropostaVotoResponse> _proposteStoriche = [];
-  List<VotoUtenteResponse> _votiUtenteCorrente = [];
   PropostaVotoResponse? _propostaSelezionata;
   PropostaVotoResponse? _vincitoreMeseCorrente;
   bool _isLoading = false;
   String? _error;
   String _meseCorrente = '';
 
-  // Costruttore
-  PropostaVotoViewModel(this._propostaVotoService, this._authService) 
+  PropostaVotoViewModel(this._propostaVotoService, this._votoUtenteViewModel) 
   {
     _caricaMeseCorrente();
   }
 
-  // Getter per lo stato
   List<PropostaVotoResponse> get proposteCorrenti => _proposteCorrenti;
   List<PropostaVotoResponse> get proposteStoriche => _proposteStoriche;
   PropostaVotoResponse? get propostaSelezionata => _propostaSelezionata;
@@ -35,20 +30,16 @@ class PropostaVotoViewModel extends ChangeNotifier
   bool get isLoading => _isLoading;
   String? get error => _error;
   String get meseCorrente => _meseCorrente;
-  int? get utenteIdCorrente => _authService.currentUserId;
   
-  // Verifica se l'utente ha già votato per una proposta
-  bool haVotatoPerProposta(int propostaId) {
-    return _votiUtenteCorrente.any((voto) => voto.propostaVotoId == propostaId);
+  bool haVotatoPerProposta(int propostaId) 
+  {
+    return _votoUtenteViewModel.haVotatoPerProposta(propostaId);
   }
   
-  // Numero totale di voti dell'utente questo mese
-  int get votiUtenteCorrente => _votiUtenteCorrente.length;
-  
-  // Massimo voti consentiti
+  int get votiUtenteCorrente => _votoUtenteViewModel.votiUtenteCorrente.length;
   int get maxVotiConsentiti => 3;
+  bool get puoVotareAncora => _votoUtenteViewModel.puoVotareAncora;
 
-  // Metodi per gestire lo stato di caricamento ed errori
   void _setLoading(bool loading) 
   {
     _isLoading = loading;
@@ -61,14 +52,12 @@ class PropostaVotoViewModel extends ChangeNotifier
     notifyListeners();
   }
 
-  // Calcola il mese corrente nel formato "YYYY-MM"
   void _caricaMeseCorrente() 
   {
     final now = DateTime.now();
     _meseCorrente = '${now.year}-${now.month.toString().padLeft(2, '0')}';
   }
 
-  // Carica le proposte del mese corrente
   Future<void> caricaProposteMeseCorrente() async 
   {
     _setLoading(true);
@@ -77,7 +66,7 @@ class PropostaVotoViewModel extends ChangeNotifier
     try 
     {
       _proposteCorrenti = await _propostaVotoService.getProposteByMese(meseVotazione: _meseCorrente);
-      await _caricaVotiUtenteCorrente();
+      await _votoUtenteViewModel.caricaVotiUtenteCorrente();
       await _caricaVincitoreMeseCorrente();
       notifyListeners();
     } 
@@ -91,32 +80,18 @@ class PropostaVotoViewModel extends ChangeNotifier
     }
   }
 
-  // Carica i voti dell'utente corrente per questo mese
-  Future<void> _caricaVotiUtenteCorrente() async 
-  {
-    // NOTA: Qui dovrei implementare una chiamata API per ottenere i voti dell'utente
-    // Per ora, inizializzo come lista vuota - il backend gestirà la logica
-    _votiUtenteCorrente = [];
-    
-    // Se hai un endpoint per ottenere i voti dell'utente, implementalo qui:
-    // _votiUtenteCorrente = await _propostaVotoService.getVotiUtente(meseVotazione: _meseCorrente);
-  }
-
-  // Carica il vincitore del mese corrente
   Future<void> _caricaVincitoreMeseCorrente() async 
   {
-    try 
+    try
     {
       _vincitoreMeseCorrente = await _propostaVotoService.getWinnerProposta(_meseCorrente);
     } 
     catch (e) 
     {
-      // Se non c'è un vincitore, è normale (potrebbe essere ancora in corso la votazione)
       _vincitoreMeseCorrente = null;
     }
   }
 
-  // Proponi un nuovo libro per la votazione
   Future<bool> proponiLibro(int libroId) async 
   {
     _setLoading(true);
@@ -145,16 +120,20 @@ class PropostaVotoViewModel extends ChangeNotifier
     }
   }
 
-  // Vota per una proposta
   Future<bool> votaPerProposta(int propostaId) async 
   {
-    if (_authService.currentUserId == null) 
+    if (!_votoUtenteViewModel.puoVotareAncora) 
     {
-      _setError('Utente non autenticato');
+      _setError('Hai già raggiunto il massimo di 3 voti questo mese');
       return false;
     }
 
-    // Il backend gestirà i controlli sui voti massimi e duplicati
+    if (_votoUtenteViewModel.haVotatoPerProposta(propostaId)) 
+    {
+      _setError('Hai già votato per questa proposta');
+      return false;
+    }
+
     _setLoading(true);
     _setError(null);
     
@@ -167,10 +146,8 @@ class PropostaVotoViewModel extends ChangeNotifier
       
       final voto = await _propostaVotoService.voteForProposta(request);
       
-      // Aggiorna lo stato locale
-      _votiUtenteCorrente.add(voto);
+      _votoUtenteViewModel.aggiungiVotoLocalmente(voto);
       
-      // Aggiorna il conteggio voti nella proposta
       final propostaIndex = _proposteCorrenti.indexWhere((p) => p.id == propostaId);
       if (propostaIndex != -1) 
       {
@@ -198,7 +175,6 @@ class PropostaVotoViewModel extends ChangeNotifier
     }
   }
 
-  // Rimuovi voto da una proposta
   Future<bool> rimuoviVoto(int propostaId) async 
   {
     _setLoading(true);
@@ -206,13 +182,8 @@ class PropostaVotoViewModel extends ChangeNotifier
     
     try 
     {
-      // NOTA: Qui dovresti implementare una chiamata API per rimuovere il voto
-      // Per ora, gestiamo solo lo stato locale
+      _votoUtenteViewModel.rimuoviVotoLocalmente(propostaId);
       
-      // Rimuovi dalla lista voti utente
-      _votiUtenteCorrente.removeWhere((voto) => voto.propostaVotoId == propostaId);
-      
-      // Aggiorna il conteggio voti nella proposta
       final propostaIndex = _proposteCorrenti.indexWhere((p) => p.id == propostaId);
       if (propostaIndex != -1 && _proposteCorrenti[propostaIndex].numVoti > 0) 
       {
@@ -240,7 +211,6 @@ class PropostaVotoViewModel extends ChangeNotifier
     }
   }
 
-  // Carica proposte storiche (mesi precedenti)
   Future<void> caricaProposteStoriche(String mese) async 
   {
     _setLoading(true);
@@ -261,45 +231,38 @@ class PropostaVotoViewModel extends ChangeNotifier
     }
   }
 
-  // Seleziona una proposta
   void selezionaProposta(PropostaVotoResponse proposta) 
   {
     _propostaSelezionata = proposta;
     notifyListeners();
   }
 
-  // Deseleziona la proposta corrente
-  void deselezionaProposta()
+  void deselezionaProposta() 
   {
     _propostaSelezionata = null;
     notifyListeners();
   }
 
-  // Verifica se un libro è già stato proposto questo mese
   bool libroGiaProposto(int libroId) 
   {
     return _proposteCorrenti.any((proposta) => proposta.libroProposto.id == libroId);
   }
 
-  // Ordina le proposte per numero di voti (discendente)
   void ordinaPropostePerVoti() 
   {
     _proposteCorrenti.sort((a, b) => b.numVoti.compareTo(a.numVoti));
     notifyListeners();
   }
 
-  // Pulisci gli errori
   void clearError() 
   {
     _setError(null);
   }
 
-  // Reset dello stato
   void resetState() 
   {
     _proposteCorrenti = [];
     _proposteStoriche = [];
-    _votiUtenteCorrente = [];
     _propostaSelezionata = null;
     _vincitoreMeseCorrente = null;
     _setError(null);

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'screens/book_details_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/crea_utente_screen.dart';
 import 'screens/dashboard_screen.dart';
@@ -11,6 +10,7 @@ import 'screens/lista_commenti_screen.dart';
 import 'screens/lista_curiosita_screen.dart';
 import 'screens/lista_frasi_preferite_screen.dart';
 import 'screens/lista_libri_screen.dart';
+import 'screens/lista_raccoglitori_screen.dart';
 import 'screens/lista_utenti_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/registration_screen.dart';
@@ -35,7 +35,9 @@ import 'view_models/frase_preferita_view_model.dart';
 import 'view_models/lettura_corrente_view_model.dart';
 import 'view_models/libro_view_model.dart';
 import 'view_models/proposta_voto_view_model.dart';
+import 'view_models/raccoglitori_view_model.dart';
 import 'view_models/utente_view_model.dart';
+import 'view_models/voto_utente_view_model.dart';
 
 void main() 
 {
@@ -181,8 +183,21 @@ void main()
         ChangeNotifierProvider<PropostaVotoViewModel>(
           create: (context) {
             final propostaService = context.read<PropostaVotoApiService>();
+            final votoUtenteVM = context.read<VotoUtenteViewModel>();
+            return PropostaVotoViewModel(propostaService, votoUtenteVM);
+          },
+        ),
+        ChangeNotifierProvider<RaccoglitoriViewModel>(
+          create: (context) {
+            final raccoglitoriService = context.read<RaccoglitoriApiService>();
+            return RaccoglitoriViewModel(raccoglitoriService);
+          },
+        ),
+        ChangeNotifierProvider<VotoUtenteViewModel>(
+          create: (context) {
+            final votoUtenteService = context.read<VotoUtenteApiService>();
             final authService = context.read<AuthService>();
-            return PropostaVotoViewModel(propostaService, authService);
+            return VotoUtenteViewModel(votoUtenteService, authService);
           },
         ),
       ],
@@ -226,6 +241,7 @@ class GDLApp extends StatelessWidget {
           return DettaglioLibroScreen(libroId: args['libroId']);
         },
         '/votazioni': (context) => const VotazioniScreen(),
+        '/raccoglitori': (context) => const ListaRaccoglitoriScreen(),
       },
       
       // ✅ LAZY LOADING (simile a loadChildren in Angular)
@@ -304,8 +320,6 @@ class GDLApp extends StatelessWidget {
                   return MaterialPageRoute(
                     builder: (_) => DettaglioLibroScreen(libroId: args['libroId']),
                   );
-          case '/votazioni':
-            return MaterialPageRoute(builder: (_) => const VotazioniScreen());
           //case '/book-details':
             //return MaterialPageRoute(builder: (_) => const BookDetailsScreen(bookId: ,));
           //case '/voting':
