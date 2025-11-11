@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gld_raccoglitori/screens/impostazioni_screen.dart';
 import 'package:provider/provider.dart';
+import 'screens/calendario_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/crea_utente_screen.dart';
 import 'screens/dashboard_screen.dart';
@@ -13,6 +15,7 @@ import 'screens/lista_libri_screen.dart';
 import 'screens/lista_raccoglitori_screen.dart';
 import 'screens/lista_utenti_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/profile_screen.dart';
 import 'screens/registration_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/votazioni_screen.dart';
@@ -38,13 +41,15 @@ import 'view_models/proposta_voto_view_model.dart';
 import 'view_models/raccoglitori_view_model.dart';
 import 'view_models/utente_view_model.dart';
 import 'view_models/voto_utente_view_model.dart';
+import 'services/impostazioni_api_service.dart';
+import 'view_models/impostazioni_view_model.dart';
 
 void main() 
 {
   runApp(
     MultiProvider(
       providers: [
-        Provider<AuthService>(create: (_) => AuthService()),
+        ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
         ChangeNotifierProvider<AuthViewModel>(
           create: (context) {
             final authService = context.read<AuthService>();
@@ -138,6 +143,15 @@ void main()
             );
           },
         ),
+        Provider<ImpostazioniApiService>(
+          create: (context) {
+            final authService = context.read<AuthService>();
+            return ImpostazioniApiService(
+              authService: authService,
+              baseUrl: "http://localhost:8080",
+            );
+          },
+        ),
         ChangeNotifierProvider<UtenteViewModel>(
           create: (context) {
             final utenteService = context.read<UtenteApiService>();
@@ -180,6 +194,13 @@ void main()
             return LibroViewModel(libroService);
           },
         ),
+        ChangeNotifierProvider<VotoUtenteViewModel>(
+          create: (context) {
+            final votoUtenteService = context.read<VotoUtenteApiService>();
+            final authService = context.read<AuthService>();
+            return VotoUtenteViewModel(votoUtenteService, authService);
+          },
+        ),
         ChangeNotifierProvider<PropostaVotoViewModel>(
           create: (context) {
             final propostaService = context.read<PropostaVotoApiService>();
@@ -193,11 +214,10 @@ void main()
             return RaccoglitoriViewModel(raccoglitoriService);
           },
         ),
-        ChangeNotifierProvider<VotoUtenteViewModel>(
+        ChangeNotifierProvider<ImpostazioniViewModel>(
           create: (context) {
-            final votoUtenteService = context.read<VotoUtenteApiService>();
-            final authService = context.read<AuthService>();
-            return VotoUtenteViewModel(votoUtenteService, authService);
+            final impostazioniService = context.read<ImpostazioniApiService>();
+            return ImpostazioniViewModel(impostazioniService);
           },
         ),
       ],
@@ -206,129 +226,144 @@ void main()
   );
 }
 
-class GDLApp extends StatelessWidget {
+class GDLApp extends StatelessWidget 
+{
   const GDLApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'GDL Raccoglitori',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E88E5),
-          foregroundColor: Colors.white,
-          centerTitle: true,
-        ),
-        useMaterial3: true,
-      ),
-      
-      // ✅ ROUTING CONFIGURATION (simile a Angular RouterModule)
-      initialRoute: '/', // Route iniziale
-      routes: {
-        '/': (context) => const AuthWrapper(),
-        '/dashboard': (context) => const DashboardScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegistrationScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/utenti': (context) => const ListaUtentiScreen(),
-        '/chat': (context) => const ListaChatScreen(),
-        '/libri': (context) => const ListaLibriScreen(),
-        '/dettaglio-libro': (context) 
-        {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return DettaglioLibroScreen(libroId: args['libroId']);
-        },
-        '/votazioni': (context) => const VotazioniScreen(),
-        '/raccoglitori': (context) => const ListaRaccoglitoriScreen(),
-      },
-      
-      // ✅ LAZY LOADING (simile a loadChildren in Angular)
-      onGenerateRoute: (settings) {
-        // Puoi caricare screen on-demand per performance
-        switch (settings.name) 
-        {
-          case '/crea-utente':
-            return MaterialPageRoute(builder: (_) => const CreaUtenteScreen());
-          case '/dettaglio-utente':
-            final args = settings.arguments as Map<String, dynamic>;
-            return MaterialPageRoute(
-              builder: (_) => DettaglioUtenteScreen(utenteId: args['utenteId']),
-            );
-          case '/chat-screen':
-            final args = settings.arguments as Map<String, dynamic>;
-            final authService = Provider.of<AuthService>(context, listen: false);
-            final utenteCorrenteId = authService.currentUserId;
-            
-            if (utenteCorrenteId == null) {
-              return MaterialPageRoute(builder: (_) => const LoginScreen());
-            }
-            
-            return MaterialPageRoute(
-              builder: (_) => ChatScreen(
-                gruppoId: args['gruppoId'],
-                altroUtenteId: args['altroUtenteId'],
-                tipoChat: args['tipoChat'],
-                utenteCorrenteId: utenteCorrenteId,
-              ),
-            );
-          case '/commenti':
-            final args = settings.arguments as Map<String, dynamic>;
-            final authService = Provider.of<AuthService>(context, listen: false);
-            final utenteCorrenteId = authService.currentUserId ?? args['utenteCorrenteId'];
-            return MaterialPageRoute(
-              builder: (_) => ListaCommentiScreen(
-                letturaCorrenteId: args['letturaCorrenteId'],
-                paginaRiferimento: args['paginaRiferimento'],
-                titoloLettura: args['titoloLettura'],
-                utenteCorrenteId: utenteCorrenteId!,
-              ),
-            );
-          case '/curiosita':
-            final args = settings.arguments as Map<String, dynamic>;
-            return MaterialPageRoute(
-              builder: (_) => ListaCuriositaScreen(
-                libroId: args['libroId'],
-                paginaRiferimento: args['paginaRiferimento'],
-                titoloLibro: args['titoloLibro'],
-              ),
-            );
-          case '/frasi-preferite':
-            final args = settings.arguments as Map<String, dynamic>;
-            return MaterialPageRoute(
-              builder: (_) => ListaFrasiPreferiteScreen(
-                libroId: args['libroId'],
-                titoloLibro: args['titoloLibro'],
-              ),
-            );
-          case '/lettura':
-            final args = settings.arguments as Map<String, dynamic>;
-            return MaterialPageRoute(
-              builder: (_) => LetturaScreen(
-                bookId: args['bookId'],
-                bookTitle: args['bookTitle'],
-                numeroPagineTotali: args['numeroPagineTotali'],
-              ),
-            );
-            case '/libri-da-leggere':
-                  return MaterialPageRoute(
-                    builder: (_) => const ListaLibriScreen(mostraSoloNonLetti: true),
-                  );
-                case '/dettaglio-libro':
-                  final args = settings.arguments as Map<String, dynamic>;
-                  return MaterialPageRoute(
-                    builder: (_) => DettaglioLibroScreen(libroId: args['libroId']),
-                  );
-          //case '/book-details':
-            //return MaterialPageRoute(builder: (_) => const BookDetailsScreen(bookId: ,));
-          //case '/voting':
-           // return MaterialPageRoute(builder: (_) => const VotingScreen());
-          // Aggiungi altre routes lazy qui...
+  Widget build(BuildContext context) 
+  {
+    return Consumer<ImpostazioniViewModel>(
+      builder: (context, impostazioniVM, child) 
+      {
+        final tema = impostazioniVM.impostazioni?.tema ?? 'system';
+        
+        switch (tema) {
+          case 'dark':
+            break;
+          case 'light':
+            break;
+          default: // system
         }
-        return null;
-      },
-    );
+      return MaterialApp(
+        title: 'GDL Raccoglitori',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF1E88E5),
+            foregroundColor: Colors.white,
+            centerTitle: true,
+          ),
+          useMaterial3: true,
+        ),
+        
+        // ✅ ROUTING CONFIGURATION (simile a Angular RouterModule)
+        initialRoute: '/', // Route iniziale
+        routes: {
+          '/': (context) => const AuthWrapper(),
+          '/dashboard': (context) => const DashboardScreen(),
+          '/login': (context) => const LoginScreen(),
+          '/register': (context) => const RegistrationScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/utenti': (context) => const ListaUtentiScreen(),
+          '/chat': (context) => const ListaChatScreen(),
+          '/libri': (context) => const ListaLibriScreen(),
+          '/dettaglio-libro': (context) 
+          {
+            final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+            return DettaglioLibroScreen(libroId: args['libroId']);
+          },
+          '/votazioni': (context) => const VotazioniScreen(),
+          '/raccoglitori': (context) => const ListaRaccoglitoriScreen(),
+          '/discussioni': (context) => const ListaChatScreen(),
+          '/profilo': (context) => const ProfileScreen(),
+          '/calendario': (context) => const CalendarioScreen(),
+          '/impostazioni': (context) => const ImpostazioniScreen()
+        },
+        
+        // ✅ LAZY LOADING (simile a loadChildren in Angular)
+        onGenerateRoute: (settings) {
+          // Puoi caricare screen on-demand per performance
+          switch (settings.name) 
+          {
+            case '/crea-utente':
+              return MaterialPageRoute(builder: (_) => const CreaUtenteScreen());
+            case '/dettaglio-utente':
+              final args = settings.arguments as Map<String, dynamic>;
+              return MaterialPageRoute(
+                builder: (_) => DettaglioUtenteScreen(utenteId: args['utenteId']),
+              );
+            case '/chat-screen':
+              final args = settings.arguments as Map<String, dynamic>;
+              final authService = Provider.of<AuthService>(context, listen: false);
+              final utenteCorrenteId = authService.currentUserId;
+              
+              if (utenteCorrenteId == null) 
+              {
+                return MaterialPageRoute(builder: (_) => const LoginScreen());
+              }
+              
+              return MaterialPageRoute(
+                builder: (_) => ChatScreen(
+                  gruppoId: args['gruppoId'],
+                  altroUtenteId: args['altroUtenteId'],
+                  tipoChat: args['tipoChat'],
+                  utenteCorrenteId: utenteCorrenteId,
+                ),
+              );
+            case '/commenti':
+              final args = settings.arguments as Map<String, dynamic>;
+              final authService = Provider.of<AuthService>(context, listen: false);
+              final utenteCorrenteId = authService.currentUserId ?? args['utenteCorrenteId'];
+              return MaterialPageRoute(
+                builder: (_) => ListaCommentiScreen(
+                  letturaCorrenteId: args['letturaCorrenteId'],
+                  paginaRiferimento: args['paginaRiferimento'],
+                  titoloLettura: args['titoloLettura'],
+                  utenteCorrenteId: utenteCorrenteId!,
+                ),
+              );
+            case '/curiosita':
+              final args = settings.arguments as Map<String, dynamic>;
+              return MaterialPageRoute(
+                builder: (_) => ListaCuriositaScreen(
+                  libroId: args['libroId'],
+                  paginaRiferimento: args['paginaRiferimento'],
+                  titoloLibro: args['titoloLibro'],
+                ),
+              );
+            case '/frasi-preferite':
+              final args = settings.arguments as Map<String, dynamic>;
+              return MaterialPageRoute(
+                builder: (_) => ListaFrasiPreferiteScreen(
+                  libroId: args['libroId'],
+                  titoloLibro: args['titoloLibro'],
+                ),
+              );
+            case '/lettura':
+              final args = settings.arguments as Map<String, dynamic>;
+              return MaterialPageRoute(
+                builder: (_) => LetturaScreen(
+                  bookId: args['bookId'],
+                  bookTitle: args['bookTitle'],
+                  numeroPagineTotali: args['numeroPagineTotali'],
+                ),
+              );
+              case '/libri-da-leggere':
+                    return MaterialPageRoute(
+                      builder: (_) => const ListaLibriScreen(mostraSoloNonLetti: true),
+                    );
+                  case '/dettaglio-libro':
+                    final args = settings.arguments as Map<String, dynamic>;
+                    return MaterialPageRoute(
+                      builder: (_) => DettaglioLibroScreen(libroId: args['libroId']),
+                    );
+          }
+          return null;
+        },
+      );
+  });
   }
 }
 

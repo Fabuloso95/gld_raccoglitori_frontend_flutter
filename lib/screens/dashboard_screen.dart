@@ -49,34 +49,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<LetturaCorrenteResponse?> _getLetturaCorrente(LetturaCorrenteApiService service) async 
   {
-  try 
-  {
-    final letture = await service.getMyReadings();
-    
-    if (letture.isEmpty) 
-    {
-      return null; 
-    }
-
     try 
     {
-      final letturaNonCompletata = letture.firstWhere(
-        (lettura) => lettura.dataCompletamento == null,
-      );
-      return letturaNonCompletata; 
+      final letture = await service.getMyReadings();
+      
+      if (letture.isEmpty) 
+      {
+        return null;
+      }
+
+      try 
+      {
+        final letturaNonCompletata = letture.firstWhere(
+          (lettura) => lettura.dataCompletamento == null,
+        );
+        return letturaNonCompletata;
+      } 
+      catch (e) 
+      {
+        // Se non trova letture non completate, restituisci l'ultima
+        return letture.isNotEmpty ? letture.last : null;
+      }
     } 
     catch (e) 
     {
-      return letture.last;
+      print('Errore caricamento lettura corrente: $e');
+      return null;
     }
-    
-  } 
-  catch (e) 
-  {
-    print('Errore caricamento lettura corrente: $e');
-    return null;
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -224,49 +224,73 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildLibroVincitoreSection() {
-    return FutureBuilder<PropostaVotoResponse?>(
-      future: _libroVincitoreFuture,
-      builder: (context, snapshot) {
-        return Card(
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.emoji_events, color: Colors.amber),
-                    SizedBox(width: 8),
-                    Text(
-                      'Libro Vincitore del Mese',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                
-                if (snapshot.connectionState == ConnectionState.waiting)
-                  const Center(child: CircularProgressIndicator()),
-                
-                if (snapshot.hasError)
-                  _buildErrorWidget('Errore nel caricamento del vincitore'),
-                
-                if (snapshot.hasData && snapshot.data != null)
-                  _buildLibroVincitoreCard(snapshot.data!),
-                
-                if (snapshot.hasData && snapshot.data == null)
-                  _buildNessunVincitoreWidget(),
-              ],
-            ),
+  return FutureBuilder<PropostaVotoResponse?>(
+    future: _libroVincitoreFuture,
+    builder: (context, snapshot) {
+      // Gestione stati migliorata
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return _buildLoadingCard('Caricamento libro vincitore...');
+      }
+      
+      if (snapshot.hasError) {
+        return _buildErrorCard('Errore nel caricamento del vincitore');
+      }
+      
+      if (!snapshot.hasData || snapshot.data == null) {
+        return _buildNessunVincitoreWidget();
+      }
+      
+      return _buildLibroVincitoreCard(snapshot.data!);
+    },
+  );
+}
+
+Widget _buildErrorCard(String message) {
+  return Card(
+    elevation: 2,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          const Icon(Icons.error_outline, color: Colors.red, size: 40),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.red),
+            textAlign: TextAlign.center,
           ),
-        );
-      },
-    );
-  }
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: () {
+              // Ricarica i dati
+              _loadDashboardData();
+            },
+            child: const Text('Riprova'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _buildLoadingCard(String message) {
+  return Card(
+    elevation: 2,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _buildLibroVincitoreCard(PropostaVotoResponse propostaVincitrice) {
     final libro = propostaVincitrice.libroProposto;

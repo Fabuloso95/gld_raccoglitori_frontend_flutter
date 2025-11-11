@@ -1,4 +1,3 @@
-// services/auth_client.dart
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'auth_service.dart';
@@ -20,7 +19,6 @@ class AuthClient extends BaseClient
   @override
   Future<StreamedResponse> send(BaseRequest request) async 
   {
-    // ✅ Aggiungi il token se necessario
     if (!_isPublic(request.url.path) && _authService.accessToken != null) 
     {
       request.headers['Authorization'] = 'Bearer ${_authService.accessToken}';
@@ -29,12 +27,10 @@ class AuthClient extends BaseClient
 
     final response = await _inner.send(request);
 
-    // ✅ Intercetta errori 401
     if (response.statusCode == 401) 
     {
       response.stream.listen((_) {}).cancel();
       
-      // ✅ Usa il metodo refreshAccessToken dell'AuthService
       final refreshSuccess = await _authService.refreshAccessToken();
       
       if (refreshSuccess && _authService.accessToken != null) 
@@ -48,7 +44,7 @@ class AuthClient extends BaseClient
     return response;
   }
 
-  bool _isPublic(String path) 
+  bool _isPublic(String path)
   {
     return _publicEndpoints.any((endpoint) => path.contains(endpoint));
   }
@@ -67,5 +63,10 @@ class AuthClient extends BaseClient
     }
     
     return cloned;
+  }
+
+  void dispose() 
+  {
+    _inner.close();
   }
 }
