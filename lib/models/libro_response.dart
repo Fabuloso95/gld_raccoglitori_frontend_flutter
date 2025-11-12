@@ -23,14 +23,14 @@ class LibroResponse
   factory LibroResponse.fromJson(Map<String, dynamic> json) 
   {
     return LibroResponse(
-      id: (json['id'] as int).toInt(),
-      titolo: json['titolo'] as String,
-      autore: json['autore'] as String,
-      copertinaUrl: json['copertinaUrl'] as String,
-      sinossi: json['sinossi'] as String,
-      annoPubblicazione: (json['annoPubblicazione'] as int).toInt(),
-      numeroPagine: (json['numeroPagine'] as int).toInt(),
-      letto: (json['letto'] as bool) 
+      id: (json['id'] as int?)?.toInt() ?? 0,
+      titolo: json['titolo'] as String? ?? '',
+      autore: json['autore'] as String? ?? '',
+      copertinaUrl: json['copertinaUrl'] as String? ?? '',
+      sinossi: json['sinossi'] as String? ?? '',
+      annoPubblicazione: (json['annoPubblicazione'] as int?)?.toInt() ?? 0,
+      numeroPagine: (json['numeroPagine'] as int?)?.toInt() ?? 0,
+      letto: (json['letto'] as bool?) ?? false,
     );
   }
 }

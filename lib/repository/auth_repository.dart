@@ -108,26 +108,51 @@ class AuthRepository
 
   int? getUserIdFromToken(String token) 
   {
-    try 
+  try 
+  {
+    print('🎯 DEBUG - Decodifica token per User ID');
+    final parts = token.split('.');
+    if (parts.length != 3) 
     {
-      final parts = token.split('.');
-      if (parts.length != 3) {
-        return null;
-      }
-      
-      final payload = parts[1];
-      final normalized = base64Url.normalize(payload);
-      final decoded = utf8.decode(base64Url.decode(normalized));
-      final payloadMap = json.decode(decoded);
-      
-      return payloadMap['userId'] as int?;
-    } 
-    catch (e) 
-    {
-      debugPrint('Errore decodifica token: $e');
+      print('❌ Token non valido: non ha 3 parti');
       return null;
     }
+    
+    final payload = parts[1];
+    // Decodifica Base64Url
+    String normalized = base64Url.normalize(payload);
+    String decoded = utf8.decode(base64Url.decode(normalized));
+    Map<String, dynamic> payloadMap = json.decode(decoded);
+    
+    print('🎯 DEBUG - Payload decodificato: $payloadMap');
+    
+    // Estrai l'ID - prova diversi nomi di campo
+    final userId = payloadMap['id'] ?? payloadMap['userId'] ?? payloadMap['sub'];
+    
+    if (userId != null) 
+    {
+      print('🎯 DEBUG - User ID estratto: $userId (tipo: ${userId.runtimeType})');
+      if (userId is int) 
+      {
+        return userId;
+      } 
+      else if (userId is String) 
+      {
+        return int.tryParse(userId);
+      }
+    }
+    
+    print('❌ DEBUG - Campo ID non trovato nel token');
+    print('❌ DEBUG - Campi disponibili: ${payloadMap.keys}');
+    return null;
+    
+  } 
+  catch (e) 
+  {
+    print('❌ ERRORE in getUserIdFromToken: $e');
+    return null;
   }
+}
 
   void dispose() {client.close();}
 }

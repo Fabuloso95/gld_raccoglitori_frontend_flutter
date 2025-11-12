@@ -9,6 +9,8 @@ import 'package:gld_raccoglitori/widgets/crea_libro_dialog.dart';
 import '../widgets/aggiungi_frase_preferita_dialog.dart';
 import 'package:gld_raccoglitori/widgets/aggiungi_curiosita_dialog.dart';
 
+import '../widgets/modifica_libro_dialog.dart';
+
 class DettaglioLibroScreen extends StatefulWidget {
   final int libroId;
 
@@ -136,7 +138,8 @@ class _DettaglioLibroScreenState extends State<DettaglioLibroScreen> with Single
     );
   }
 
-  Widget _buildInfoTab(LibroResponse libro) {
+  Widget _buildInfoTab(LibroResponse libro) 
+  {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -146,23 +149,7 @@ class _DettaglioLibroScreenState extends State<DettaglioLibroScreen> with Single
           Center(
             child: Column(
               children: [
-                Container(
-                  width: 200,
-                  height: 300,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    image: libro.copertinaUrl.isNotEmpty
-                        ? DecorationImage(
-                            image: NetworkImage(libro.copertinaUrl),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                    color: libro.copertinaUrl.isEmpty ? Colors.grey[200] : null,
-                  ),
-                  child: libro.copertinaUrl.isEmpty
-                      ? const Icon(Icons.book, size: 60, color: Colors.grey)
-                      : null,
-                ),
+                _buildCopertinaLibro(libro),
                 const SizedBox(height: 16),
                 Text(
                   libro.titolo,
@@ -288,7 +275,57 @@ class _DettaglioLibroScreenState extends State<DettaglioLibroScreen> with Single
     );
   }
 
-  Widget _buildFrasiTab(LibroResponse libro) {
+  Widget _buildCopertinaLibro(LibroResponse libro) 
+  {
+    return Container(
+      width: 200,
+      height: 300,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.blueGrey[100],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.book, size: 60, color: Colors.blueGrey[300]),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              libro.titolo,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.blueGrey[700],
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'di ${libro.autore}',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.blueGrey[500],
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFrasiTab(LibroResponse libro) 
+  {
     return Consumer<FrasePreferitaViewModel>(
       builder: (context, fraseViewModel, child) {
         final frasi = fraseViewModel.frasiPerLibro[libro.id] ?? [];
@@ -605,18 +642,19 @@ class _DettaglioLibroScreenState extends State<DettaglioLibroScreen> with Single
 
   void _modificaLibro(BuildContext context) 
   {
-  final libroViewModel = context.read<LibroViewModel>();
-  final libro = libroViewModel.libroSelezionato;
+    final libroViewModel = context.read<LibroViewModel>();
+    final libro = libroViewModel.libroSelezionato;
 
-  if (libro != null) 
-  {
-    showDialog(
-      context: context,
-      builder: (context) => CreaLibroDialog(
-      ),
-    );
+    if (libro != null) 
+    {
+      showDialog(
+        context: context,
+        builder: (context) => ModificaLibroDialog(
+          libro: libro,
+        ),
+      );
+    }
   }
-}
 
   void _aggiungiFrasePreferita(BuildContext context) {
     final libroViewModel = context.read<LibroViewModel>();

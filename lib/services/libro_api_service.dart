@@ -62,6 +62,16 @@ class LibroApiService
     if (response.statusCode == 200) 
     {
       final Map<String, dynamic> responseData = json.decode(response.body);
+      
+      // DEBUG: Stampa cosa ricevi dal backend
+      print('🔍 Risposta backend libro:');
+      print('🔍 ID: ${responseData['id']}');
+      print('🔍 Titolo: ${responseData['titolo']}');
+      print('🔍 Autore: ${responseData['autore']}');
+      print('🔍 NumeroPagine: ${responseData['numeroPagine']}');
+      print('🔍 AnnoPubblicazione: ${responseData['annoPubblicazione']}');
+      print('🔍 Letto: ${responseData['letto']}');
+      
       return LibroResponse.fromJson(responseData);
     } 
     else 

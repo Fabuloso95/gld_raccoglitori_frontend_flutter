@@ -35,7 +35,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     
     final meseCorrente = _getMeseCorrente();
     
-    // ✅ API REALI - come nel tuo backend
     _libroVincitoreFuture = propostaService.getWinnerProposta(meseCorrente);
     _letturaCorrenteFuture = _getLetturaCorrente(letturaService);
     _proposteAttiveFuture = propostaService.getProposteByMese(meseVotazione: meseCorrente);
@@ -298,8 +297,8 @@ Widget _buildLoadingCard(String message) {
       onTap: () {
         Navigator.pushNamed(
           context,
-          '/book-details',
-          arguments: {'bookId': libro.id},
+          '/dettaglio-libro',
+          arguments: {'libroId': libro.id},
         );
       },
       child: Row(
@@ -436,10 +435,14 @@ Widget _buildLoadingCard(String message) {
         ElevatedButton(
           onPressed: () 
           {
-            Navigator.pushNamed(
+            print('🎯 Navigazione a lettura libro ID: ${lettura.libroId}');
+            
+            // Usa pushReplacementNamed per evitare loop
+            Navigator.pushReplacementNamed(
               context, 
               '/lettura',
-              arguments: {
+              arguments: 
+              {
                 'bookId': lettura.libroId,
                 'bookTitle': lettura.titoloLibro,
                 'numeroPagineTotali': lettura.numeroPagineTotali,

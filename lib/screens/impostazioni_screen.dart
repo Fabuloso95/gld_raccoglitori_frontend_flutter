@@ -22,23 +22,40 @@ class _ImpostazioniScreenState extends State<ImpostazioniScreen>
   String? _tema;
   bool _hasChanges = false;
   bool _isLoading = false;
+  bool _initialLoadComplete = false;
 
   @override
   void initState() 
   {
     super.initState();
-    _loadImpostazioni();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadImpostazioni();
+    });
   }
 
   void _loadImpostazioni() 
   {
+    if (!mounted) return;
+    
     final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
     final impostazioniViewModel = Provider.of<ImpostazioniViewModel>(context, listen: false);
     final currentUserId = authViewModel.currentUserId;
+    
+    print('🔐 DEBUG - Caricamento impostazioni');
+    print('🔐 DEBUG - User ID: $currentUserId');
+    print('🔐 DEBUG - Username: ${authViewModel.currentUsername}');
+    print('🔐 DEBUG - Is authenticated: ${authViewModel.isAuthenticated}');
+    
     if (currentUserId != null) 
     {
+      setState(() {
+        _isLoading = true;
+      });
+      
       impostazioniViewModel.caricaImpostazioniUtente(currentUserId).then((_)
       {
+        if (!mounted) return;
+        
         if (impostazioniViewModel.impostazioni != null) 
         {
           setState(() 
@@ -50,8 +67,26 @@ class _ImpostazioniScreenState extends State<ImpostazioniScreen>
             _lingua = impostazioniViewModel.impostazioni!.lingua;
             _tema = impostazioniViewModel.impostazioni!.tema;
             _hasChanges = false;
+            _initialLoadComplete = true;
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _isLoading = false;
+            _initialLoadComplete = true;
           });
         }
+      }).catchError((error) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+          _initialLoadComplete = true;
+        });
+      });
+    } else {
+      setState(() {
+        _isLoading = false;
+        _initialLoadComplete = true;
       });
     }
   }
@@ -70,21 +105,12 @@ class _ImpostazioniScreenState extends State<ImpostazioniScreen>
   Future<void> _salvaImpostazioni() async 
   {
     if (!_hasChanges) return;
-    setState(() 
-    {
-      _isLoading = true;
-    });
     
     final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
-    final impostazioniViewModel = Provider.of<ImpostazioniViewModel>(context, listen: false);
     final currentUserId = authViewModel.currentUserId;
     
     if (currentUserId == null) 
     {
-      setState(() 
-      {
-        _isLoading = false;
-      });
       if (mounted) 
       {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -97,13 +123,20 @@ class _ImpostazioniScreenState extends State<ImpostazioniScreen>
       return;
     }
     
+    setState(() 
+    {
+      _isLoading = true;
+    });
+    
+    final impostazioniViewModel = Provider.of<ImpostazioniViewModel>(context, listen: false);
+    
     final request = ImpostazioniRequest(
-      notificheEmail: _notificheEmail,
-      notifichePush: _notifichePush,
-      lingua: _lingua,
-      tema: _tema,
-      emailRiassuntoSettimanale: _emailRiassunto,
-      privacyProfiloPubblico: _privacyProfilo,
+      notificheEmail: _notificheEmail ?? true,
+      notifichePush: _notifichePush ?? true,
+      lingua: _lingua ?? 'it',
+      tema: _tema ?? 'system',
+      emailRiassuntoSettimanale: _emailRiassunto ?? false,
+      privacyProfiloPubblico: _privacyProfilo ?? true,
     );
     
     try 
@@ -113,12 +146,14 @@ class _ImpostazioniScreenState extends State<ImpostazioniScreen>
         request: request,
       );
       
+      if (!mounted) return;
+      
       setState(() 
       {
         _isLoading = false;
       });
       
-      if (success && mounted) 
+      if (success) 
       {
         setState(() 
         {
@@ -131,48 +166,31 @@ class _ImpostazioniScreenState extends State<ImpostazioniScreen>
           ),
         );
       } 
-      else if (mounted) 
+      else 
       {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Errore: ${impostazioniViewModel.error ?? "Errore sconosciuto"}'),
             backgroundColor: Colors.red,
-            action: SnackBarAction(
-              label: 'Login',
-              onPressed: () 
-              {
-                // Reindirizza alla pagina di login
-                Navigator.of(context).pushReplacementNamed('/login');
-              },
-            ),
           ),
         );
       }
     } 
     catch (e) 
     {
+      if (!mounted) return;
+      
       setState(() 
       {
         _isLoading = false;
       });
       
-      if (mounted) 
-      {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Errore di autenticazione: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            action: SnackBarAction(
-              label: 'Login',
-              onPressed: () 
-              {
-                // Reindirizza alla pagina di login
-                Navigator.of(context).pushReplacementNamed('/login');
-              },
-            ),
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore di autenticazione: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -217,14 +235,22 @@ class _ImpostazioniScreenState extends State<ImpostazioniScreen>
 
   Widget _buildBody(ImpostazioniViewModel impostazioniVM) 
   {
-    if (impostazioniVM.isLoading && _notificheEmail == null) 
+    if (_isLoading && !_initialLoadComplete) 
     {
       return const Center(child: CircularProgressIndicator());
     }
-    if (impostazioniVM.error != null && _notificheEmail == null) 
+    
+    if (!_initialLoadComplete && impostazioniVM.error != null) 
     {
       return _buildErrorWidget(impostazioniVM);
     }
+    
+    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+    if (authViewModel.currentUserId == null) 
+    {
+      return _buildNotLoggedInWidget();
+    }
+
     return RefreshIndicator(
       onRefresh: () async => _loadImpostazioni(),
       child: SingleChildScrollView(
@@ -536,6 +562,35 @@ class _ImpostazioniScreenState extends State<ImpostazioniScreen>
           ElevatedButton(
             onPressed: _loadImpostazioni,
             child: const Text('Riprova'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotLoggedInWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.person_off, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text(
+            'Utente non autenticato',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Effettua il login per accedere alle impostazioni',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+            child: const Text('Vai al Login'),
           ),
         ],
       ),
