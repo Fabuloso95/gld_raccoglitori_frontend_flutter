@@ -7,14 +7,15 @@ import 'auth_service.dart';
 
 class VotoUtenteApiService 
 {
-  final AuthClient _httpClient;
   final VotoUtenteRepository _repository;
 
   VotoUtenteApiService({
     required AuthService authService,
     required String baseUrl,
-  })  : _httpClient = AuthClient(http.Client(), authService),
-        _repository = VotoUtenteRepository(baseUrl: baseUrl);
+  })  : _repository = VotoUtenteRepository(
+        baseUrl: baseUrl,
+        client: AuthClient(http.Client(), authService),
+  );
 
   void _handleError(dynamic response) 
   {

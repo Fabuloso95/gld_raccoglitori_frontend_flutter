@@ -8,8 +8,8 @@ class LibroRepository
 
   LibroRepository({
     required this.baseUrl,
-    http.Client? client,
-  }) : client = client ?? http.Client();
+    required http.Client client,
+  }) : client = client;
 
   Future<http.Response> creaLibro(Map<String, dynamic> requestBody) async 
   {

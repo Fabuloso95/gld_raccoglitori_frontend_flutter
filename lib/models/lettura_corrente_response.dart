@@ -25,16 +25,18 @@ class LetturaCorrenteResponse
   factory LetturaCorrenteResponse.fromJson(Map<String, dynamic> json) 
   {
     return LetturaCorrenteResponse(
-      id: (json['id'] as int).toInt(),
-      utenteId: (json['utenteId'] as int).toInt(),
-      libroId: (json['libroId'] as int).toInt(),
-      paginaCorrente: (json['paginaCorrente'] as int).toInt(),
-      dataInizio: DateTime.parse(json['dataInizio'] as String),
-      dataCompletamento: DateTime.parse(json['dataCompletamento'] as String),
-      partecipaChiamataZoom: json['partecipaChiamataZoom'] as bool,
-      commentiPagina: (json['commentiPagina'] as List<dynamic>)
-          .map((commento) => CommentoPaginaResponse.fromJson(commento))
-          .toList(),
+      id: (json['id'] as int?)?.toInt() ?? 0,
+      utenteId: (json['utenteId'] as int?)?.toInt() ?? 0,
+      libroId: (json['libroId'] as int?)?.toInt() ?? 0,
+      paginaCorrente: (json['paginaCorrente'] as int?)?.toInt() ?? 0,
+      dataInizio: DateTime.parse(json['dataInizio'] as String? ?? ''),
+      dataCompletamento: json['dataCompletamento'] != null 
+          ? DateTime.parse(json['dataCompletamento'] as String)
+          : null, // <-- QUESTO era il problema!
+      partecipaChiamataZoom: json['partecipaChiamataZoom'] as bool? ?? false,
+      commentiPagina: (json['commentiPagina'] as List<dynamic>?)
+          ?.map((commento) => CommentoPaginaResponse.fromJson(commento))
+          .toList() ?? [],
     );
   }
 }

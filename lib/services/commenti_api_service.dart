@@ -9,14 +9,15 @@ import 'auth_service.dart';
 
 class CommentiApiService 
 {
-  final AuthClient _httpClient;
   final CommentiRepository _repository;
 
   CommentiApiService({
     required AuthService authService,
     required String baseUrl,
-  })  : _httpClient = AuthClient(http.Client(), authService),
-        _repository = CommentiRepository(baseUrl: baseUrl);
+  }) : _repository = CommentiRepository(
+          baseUrl: baseUrl,
+          client: AuthClient(http.Client(), authService),
+        );
 
   void _handleError(http.Response response) 
   {

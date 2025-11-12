@@ -9,14 +9,15 @@ import 'auth_service.dart';
 
 class CuriositaApiService 
 {
-  final AuthClient _httpClient;
   final CuriositaRepository _repository;
 
   CuriositaApiService({
     required AuthService authService,
     required String baseUrl,
-  })  : _httpClient = AuthClient(http.Client(), authService),
-        _repository = CuriositaRepository(baseUrl: baseUrl);
+  })  : _repository = CuriositaRepository(
+        baseUrl: baseUrl,
+        client: AuthClient(http.Client(), authService),
+  );
 
   void _handleError(http.Response response) 
   {

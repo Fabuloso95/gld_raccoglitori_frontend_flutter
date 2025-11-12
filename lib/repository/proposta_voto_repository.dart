@@ -8,8 +8,8 @@ class PropostaVotoRepository
 
   PropostaVotoRepository({
     required this.baseUrl,
-    http.Client? client,
-  }) : client = client ?? http.Client();
+    required http.Client client,
+  }) : client = client;
 
   Future<http.Response> createProposta(Map<String, dynamic> requestBody) async 
   {

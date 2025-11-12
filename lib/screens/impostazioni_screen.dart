@@ -74,10 +74,29 @@ class _ImpostazioniScreenState extends State<ImpostazioniScreen>
     {
       _isLoading = true;
     });
+    
     final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
     final impostazioniViewModel = Provider.of<ImpostazioniViewModel>(context, listen: false);
     final currentUserId = authViewModel.currentUserId;
-    if (currentUserId == null) return;
+    
+    if (currentUserId == null) 
+    {
+      setState(() 
+      {
+        _isLoading = false;
+      });
+      if (mounted) 
+      {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Errore: utente non autenticato'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+    
     final request = ImpostazioniRequest(
       notificheEmail: _notificheEmail,
       notifichePush: _notifichePush,
@@ -86,34 +105,74 @@ class _ImpostazioniScreenState extends State<ImpostazioniScreen>
       emailRiassuntoSettimanale: _emailRiassunto,
       privacyProfiloPubblico: _privacyProfilo,
     );
-    final success = await impostazioniViewModel.aggiornaImpostazioni(
-      utenteId: currentUserId,
-      request: request,
-    );
-    setState(() 
+    
+    try 
     {
-      _isLoading = false;
-    });
-    if (success && mounted) 
-    {
-      setState(() {
-        _hasChanges = false;
+      final success = await impostazioniViewModel.aggiornaImpostazioni(
+        utenteId: currentUserId,
+        request: request,
+      );
+      
+      setState(() 
+      {
+        _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Impostazioni salvate con successo!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      
+      if (success && mounted) 
+      {
+        setState(() 
+        {
+          _hasChanges = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impostazioni salvate con successo!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } 
+      else if (mounted) 
+      {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore: ${impostazioniViewModel.error ?? "Errore sconosciuto"}'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Login',
+              onPressed: () 
+              {
+                // Reindirizza alla pagina di login
+                Navigator.of(context).pushReplacementNamed('/login');
+              },
+            ),
+          ),
+        );
+      }
     } 
-    else if (mounted) 
+    catch (e) 
     {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Errore: ${impostazioniViewModel.error}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      setState(() 
+      {
+        _isLoading = false;
+      });
+      
+      if (mounted) 
+      {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore di autenticazione: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Login',
+              onPressed: () 
+              {
+                // Reindirizza alla pagina di login
+                Navigator.of(context).pushReplacementNamed('/login');
+              },
+            ),
+          ),
+        );
+      }
     }
   }
 

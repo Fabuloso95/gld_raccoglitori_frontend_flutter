@@ -6,7 +6,10 @@ class MessaggioChatRepository
   final http.Client client;
   final String baseUrl;
 
-  MessaggioChatRepository({required this.baseUrl,http.Client? client}) : client = client ?? http.Client();
+  MessaggioChatRepository({
+    required this.baseUrl,
+    required http.Client client,
+  }) : client = client;
 
   Future<http.Response> sendMessage(Map<String, dynamic> requestBody) async 
   {

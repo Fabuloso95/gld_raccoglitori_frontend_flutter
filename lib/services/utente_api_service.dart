@@ -9,14 +9,15 @@ import 'auth_service.dart';
 
 class UtenteApiService 
 {
-  final AuthClient _httpClient;
   final UtenteRepository _repository;
 
   UtenteApiService({
     required AuthService authService,
     required String baseUrl,
-  })  : _httpClient = AuthClient(http.Client(), authService),
-        _repository = UtenteRepository(baseUrl: baseUrl);
+  })  : _repository = UtenteRepository(
+        baseUrl: baseUrl,
+        client: AuthClient(http.Client(), authService),
+  );
 
   void _handleError(dynamic response) 
   {

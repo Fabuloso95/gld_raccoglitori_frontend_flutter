@@ -8,14 +8,15 @@ import 'auth_service.dart';
 
 class FrasePreferitaApiService 
 {
-  final AuthClient _httpClient;
   final FrasePreferitaRepository _repository;
 
   FrasePreferitaApiService({
     required AuthService authService,
     required String baseUrl,
-  })  : _httpClient = AuthClient(http.Client(), authService),
-        _repository = FrasePreferitaRepository(baseUrl: baseUrl);
+  })  : _repository = FrasePreferitaRepository(
+        baseUrl: baseUrl,
+        client: AuthClient(http.Client(), authService),
+  );
 
   void _handleError(http.Response response) 
   {

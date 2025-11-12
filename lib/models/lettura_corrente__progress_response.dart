@@ -15,10 +15,10 @@ class LetturaCorrenteProgressResponse
   factory LetturaCorrenteProgressResponse.fromJson(Map<String, dynamic> json) 
   {
     return LetturaCorrenteProgressResponse(
-      letturaCorrenteId: (json['letturaCorrenteId'] as int).toInt(),
-      username: json['username'] as String,
-      paginaCorrente: (json['paginaCorrente'] as int).toInt(),
-      partecipaChiamataZoom: json['partecipaChiamataZoom'] as bool,
+      letturaCorrenteId: (json['letturaCorrenteId'] as int?)?.toInt() ?? 0,
+      username: json['username'] as String? ?? '',
+      paginaCorrente: (json['paginaCorrente'] as int?)?.toInt() ?? 0,
+      partecipaChiamataZoom: json['partecipaChiamataZoom'] as bool? ?? false,
     );
   }
 }

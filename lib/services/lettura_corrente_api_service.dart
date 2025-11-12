@@ -5,19 +5,24 @@ import '../models/LetturaCorrenteUpdateRequestModel.dart';
 import '../models/lettura_corrente__progress_response.dart';
 import '../models/lettura_corrente_response.dart';
 import '../repository/lettura_corrente_repository.dart';
-import 'auth_client.dart';
 import 'auth_service.dart';
 
 class LetturaCorrenteApiService 
 {
-  final AuthClient _httpClient;
-  final LetturaCorrenteRepository _repository;
+  final AuthService _authService;
+  final String baseUrl;
+  late LetturaCorrenteRepository _repository;
 
   LetturaCorrenteApiService({
     required AuthService authService,
-    required String baseUrl,
-  })  : _httpClient = AuthClient(http.Client(), authService),
-        _repository = LetturaCorrenteRepository(baseUrl: baseUrl);
+    required this.baseUrl,
+  }) : _authService = authService {
+    // Crea il repository con l'AuthClient
+    _repository = LetturaCorrenteRepository(
+      baseUrl: baseUrl,
+      authService: _authService, // Passa l'AuthService
+    );
+  }
 
   void _handleError(http.Response response) 
   {

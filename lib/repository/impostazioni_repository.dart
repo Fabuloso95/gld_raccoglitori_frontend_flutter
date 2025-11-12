@@ -1,26 +1,33 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:gld_raccoglitori/services/auth_client.dart';
-import 'package:gld_raccoglitori/services/auth_service.dart';
+import '../services/auth_service.dart';
+import '../services/auth_client.dart';
 
-class ImpostazioniRepository {
-  final AuthClient client;
+class ImpostazioniRepository 
+{
   final String baseUrl;
+  final AuthService authService;
+  late http.Client client;
 
   ImpostazioniRepository({
     required this.baseUrl,
-    required AuthService authService,
-  }) : client = AuthClient(http.Client(), authService);
-
-  Future<http.Response> getImpostazioniUtente(int utenteId) async {
-    final url = Uri.parse('$baseUrl/api/impostazioni/utente/$utenteId');
-    return client.get(url);
+    required this.authService,
+  }) 
+  {
+    client = AuthClient(http.Client(), authService);
   }
 
-  Future<http.Response> updateImpostazioni({
-    required int utenteId, 
-    required Map<String, dynamic> requestBody
-  }) async {
+  Future<http.Response> getImpostazioniUtente(int utenteId) async 
+  {
+    final url = Uri.parse('$baseUrl/api/impostazioni/utente/$utenteId');
+    return client.get(
+      url,
+      headers: {'Content-Type': 'application/json'},
+    );
+  }
+
+  Future<http.Response> updateImpostazioni({required int utenteId, required Map<String, dynamic> requestBody}) async 
+  {
     final url = Uri.parse('$baseUrl/api/impostazioni/utente/$utenteId');
     return client.put(
       url,
@@ -29,13 +36,17 @@ class ImpostazioniRepository {
     );
   }
 
-  Future<http.Response> createImpostazioniDefault(int utenteId) async {
-    final url = Uri.parse('$baseUrl/api/impostazioni/utente/$utenteId/default');
-    return client.post(url);
+  Future<http.Response> createImpostazioniDefault(int utenteId) async 
+  {
+    final url = Uri.parse('$baseUrl/api/impostazioni/utente/$utenteId');
+    return client.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+    );
   }
 
   void dispose() 
   {
-    
+    client.close();
   }
 }

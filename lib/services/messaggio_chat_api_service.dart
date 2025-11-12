@@ -8,14 +8,15 @@ import 'auth_service.dart';
 
 class MessaggioChatApiService 
 {
-  final AuthClient _httpClient;
   final MessaggioChatRepository _repository;
 
   MessaggioChatApiService({
     required AuthService authService,
     required String baseUrl,
-  })  : _httpClient = AuthClient(http.Client(), authService),
-        _repository = MessaggioChatRepository(baseUrl: baseUrl);
+  })  : _repository = MessaggioChatRepository(
+        baseUrl: baseUrl,
+        client: AuthClient(http.Client(), authService),
+  );
 
   void _handleError(dynamic response) 
   {

@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class FrasePreferitaRepository {
+class FrasePreferitaRepository 
+{
   final http.Client client;
   final String baseUrl;
 
   FrasePreferitaRepository({
     required this.baseUrl,
-    http.Client? client,
-  }) : client = client ?? http.Client();
+    required http.Client client,
+  }) : client = client;
+
 
   Future<http.Response> saveFrase(Map<String, dynamic> requestBody) async 
   {

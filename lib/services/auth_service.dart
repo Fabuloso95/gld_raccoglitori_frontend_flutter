@@ -55,6 +55,10 @@ class AuthService with ChangeNotifier
     required String role,
   }) async 
   {
+    print('💾 Salvando token: $accessToken');
+    print('💾 Username: $username');
+    print('💾 Role: $role');
+
     await _storage.write(key: _accessTokenKey, value: accessToken);
     await _storage.write(key: _refreshTokenKey, value: refreshToken);
     await _storage.write(key: _usernameKey, value: username);

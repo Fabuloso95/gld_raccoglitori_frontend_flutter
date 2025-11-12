@@ -224,26 +224,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildLibroVincitoreSection() {
-  return FutureBuilder<PropostaVotoResponse?>(
-    future: _libroVincitoreFuture,
-    builder: (context, snapshot) {
-      // Gestione stati migliorata
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return _buildLoadingCard('Caricamento libro vincitore...');
-      }
-      
-      if (snapshot.hasError) {
-        return _buildErrorCard('Errore nel caricamento del vincitore');
-      }
-      
-      if (!snapshot.hasData || snapshot.data == null) {
-        return _buildNessunVincitoreWidget();
-      }
-      
-      return _buildLibroVincitoreCard(snapshot.data!);
-    },
-  );
-}
+    return FutureBuilder<PropostaVotoResponse?>(
+      future: _libroVincitoreFuture,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          print('❌ ERRORE Libro Vincitore: ${snapshot.error}');
+          return _buildErrorCard('Nessun vincitore per questo mese');
+        }
+        
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingCard('Caricamento libro vincitore...');
+        }
+        
+        if (!snapshot.hasData || snapshot.data == null) {
+          return _buildNessunVincitoreWidget();
+        }
+        
+        return _buildLibroVincitoreCard(snapshot.data!);
+      },
+    );
+  }
 
 Widget _buildErrorCard(String message) {
   return Card(

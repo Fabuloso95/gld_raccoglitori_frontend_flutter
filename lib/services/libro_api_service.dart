@@ -8,14 +8,15 @@ import 'auth_service.dart';
 
 class LibroApiService 
 {
-  final AuthClient _httpClient;
   final LibroRepository _repository;
 
   LibroApiService({
     required AuthService authService,
     required String baseUrl,
-  })  : _httpClient = AuthClient(http.Client(), authService),
-        _repository = LibroRepository(baseUrl: baseUrl);
+  })  : _repository = LibroRepository(
+        baseUrl: baseUrl,
+        client: AuthClient(http.Client(), authService),
+  );
 
   void _handleError(http.Response response) 
   {

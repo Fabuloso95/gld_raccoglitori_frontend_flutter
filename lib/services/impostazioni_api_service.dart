@@ -8,21 +8,36 @@ class ImpostazioniApiService
 {
   final ImpostazioniRepository _repository;
 
-  ImpostazioniApiService({required AuthService authService, required String baseUrl}) : _repository = ImpostazioniRepository(
+  ImpostazioniApiService({
+    required AuthService authService,
+    required String baseUrl,
+  }) : _repository = ImpostazioniRepository(
           baseUrl: baseUrl,
           authService: authService,
         );
 
   Future<ImpostazioniResponse> getImpostazioniUtente(int utenteId) async 
   {
-    final response = await _repository.getImpostazioniUtente(utenteId);
-    if (response.statusCode == 200) 
+    print('🔄 ImpostazioniApiService - getImpostazioniUtente per utente: $utenteId');
+    try 
     {
-      final responseData = json.decode(response.body);
-      return ImpostazioniResponse.fromJson(responseData);
+      final response = await _repository.getImpostazioniUtente(utenteId);
+      print('📡 ImpostazioniApiService - Response status: ${response.statusCode}');
+      print('📡 ImpostazioniApiService - Response body: ${response.body}');
+      
+      if (response.statusCode == 200) 
+      {
+        final responseData = json.decode(response.body);
+        return ImpostazioniResponse.fromJson(responseData);
+      }
+      _handleError(response);
+      throw Exception('Errore nel recupero delle impostazioni');
+    } 
+    catch (e) 
+    {
+      print('❌ ImpostazioniApiService - Errore: $e');
+      rethrow;
     }
-    _handleError(response);
-    throw Exception('Errore nel recupero delle impostazioni');
   }
 
   Future<ImpostazioniResponse> updateImpostazioni({required int utenteId, required ImpostazioniRequest request}) async 

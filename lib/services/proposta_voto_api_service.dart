@@ -8,15 +8,17 @@ import 'package:http/http.dart' as http;
 import 'auth_client.dart';
 import 'auth_service.dart';
 
-class PropostaVotoApiService {
-  final AuthClient _httpClient;
+class PropostaVotoApiService 
+{
   final PropostaVotoRepository _repository;
 
   PropostaVotoApiService({
     required AuthService authService,
     required String baseUrl,
-  })  : _httpClient = AuthClient(http.Client(), authService),
-        _repository = PropostaVotoRepository(baseUrl: baseUrl);
+  }) : _repository = PropostaVotoRepository(
+          baseUrl: baseUrl,
+          client: AuthClient(http.Client(), authService),
+        );
 
   void _handleError(dynamic response) 
   {
