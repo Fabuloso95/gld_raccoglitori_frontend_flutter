@@ -412,9 +412,10 @@ Widget _buildLoadingCard(String message) {
     );
   }
 
-  Widget _buildProgressoCard(LetturaCorrenteResponse lettura) {
-    // Calcola percentuale di completamento
-    final progressoPercent = (lettura.paginaCorrente / 100) * 100; // TODO: Sostituisci con numeroPagine reale
+  Widget _buildProgressoCard(LetturaCorrenteResponse lettura) 
+  {
+    // ✅ CORREZIONE: usa numeroPagineTotali dal backend
+    final progressoPercent = lettura.numeroPagineTotali > 0 ? (lettura.paginaCorrente / lettura.numeroPagineTotali) * 100 : 0;
     
     return Column(
       children: [
@@ -427,14 +428,23 @@ Widget _buildLoadingCard(String message) {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Pagina ${lettura.paginaCorrente}'),
+            Text('Pagina ${lettura.paginaCorrente} di ${lettura.numeroPagineTotali}'),
             Text('${progressoPercent.toStringAsFixed(1)}% completato'),
           ],
         ),
         const SizedBox(height: 12),
         ElevatedButton(
-          onPressed: () {
-            Navigator.pushNamed(context, '/lettura');
+          onPressed: () 
+          {
+            Navigator.pushNamed(
+              context, 
+              '/lettura',
+              arguments: {
+                'bookId': lettura.libroId,
+                'bookTitle': lettura.titoloLibro,
+                'numeroPagineTotali': lettura.numeroPagineTotali,
+              }
+            );
           },
           child: const Text('Continua a Leggere'),
         ),
@@ -442,7 +452,8 @@ Widget _buildLoadingCard(String message) {
     );
   }
 
-  Widget _buildNessunaLetturaCard() {
+  Widget _buildNessunaLetturaCard() 
+  {
     return Column(
       children: [
         const Icon(Icons.menu_book_outlined, size: 40, color: Colors.grey),
@@ -453,7 +464,8 @@ Widget _buildLoadingCard(String message) {
         ),
         const SizedBox(height: 12),
         ElevatedButton(
-          onPressed: () {
+          onPressed: () 
+          {
             Navigator.pushNamed(context, '/library');
           },
           child: const Text('Scegli un Libro'),
@@ -462,7 +474,8 @@ Widget _buildLoadingCard(String message) {
     );
   }
 
-  Widget _buildProposteVotoSection() {
+  Widget _buildProposteVotoSection() 
+  {
     return FutureBuilder<List<PropostaVotoResponse>>(
       future: _proposteAttiveFuture,
       builder: (context, snapshot) {

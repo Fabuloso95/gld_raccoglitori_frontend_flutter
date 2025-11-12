@@ -10,6 +10,9 @@ class LetturaCorrenteResponse
   final DateTime? dataCompletamento; 
   final bool partecipaChiamataZoom;
   final List<CommentoPaginaResponse> commentiPagina;
+  final String titoloLibro;
+  final String autoreLibro;
+  final int numeroPagineTotali;
 
   LetturaCorrenteResponse({
     required this.id,
@@ -20,6 +23,9 @@ class LetturaCorrenteResponse
     required this.dataCompletamento,
     required this.partecipaChiamataZoom,
     required this.commentiPagina,
+    required this.titoloLibro,
+    required this.autoreLibro,
+    required this.numeroPagineTotali,
   });
 
   factory LetturaCorrenteResponse.fromJson(Map<String, dynamic> json) 
@@ -37,6 +43,9 @@ class LetturaCorrenteResponse
       commentiPagina: (json['commentiPagina'] as List<dynamic>?)
           ?.map((commento) => CommentoPaginaResponse.fromJson(commento))
           .toList() ?? [],
+      titoloLibro: json['titoloLibro'] as String? ?? '',
+      autoreLibro: json['autoreLibro'] as String? ?? '',
+      numeroPagineTotali: (json['numeroPagineTotali'] as int?)?.toInt() ?? 0,
     );
   }
 }
