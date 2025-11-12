@@ -40,19 +40,37 @@ class ImpostazioniApiService
     }
   }
 
-  Future<ImpostazioniResponse> updateImpostazioni({required int utenteId, required ImpostazioniRequest request}) async 
+  Future<ImpostazioniResponse> updateImpostazioni({
+    required int utenteId, 
+    required ImpostazioniRequest request
+  }) async 
   {
-    final response = await _repository.updateImpostazioni(
-      utenteId: utenteId,
-      requestBody: request.toJson(),
-    );
-    if (response.statusCode == 200) 
+    print('🔄 ImpostazioniApiService - updateImpostazioni per utente: $utenteId');
+    try 
     {
-      final responseData = json.decode(response.body);
-      return ImpostazioniResponse.fromJson(responseData);
+      // CORREZIONE: il parametro si chiama requestBody, non request
+      final response = await _repository.updateImpostazioni(
+        utenteId: utenteId,
+        requestBody: request.toJson(), // ← QUESTO È CORRETTO
+      );
+      
+      print('📡 ImpostazioniApiService - Update response status: ${response.statusCode}');
+      print('📡 ImpostazioniApiService - Update response body: ${response.body}');
+      
+      if (response.statusCode == 200) 
+      {
+        final responseData = json.decode(response.body);
+        return ImpostazioniResponse.fromJson(responseData);
+      }
+      
+      _handleError(response);
+      throw Exception('Errore nell\'aggiornamento delle impostazioni');
+    } 
+    catch (e) 
+    {
+      print('❌ ImpostazioniApiService - Errore update: $e');
+      rethrow;
     }
-    _handleError(response);
-    throw Exception('Errore nell\'aggiornamento delle impostazioni');
   }
 
   Future<ImpostazioniResponse> createImpostazioniDefault(int utenteId) async 

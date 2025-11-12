@@ -70,28 +70,57 @@ class ImpostazioniViewModel extends ChangeNotifier
     }
   }
 
-  Future<bool> aggiornaImpostazioni({required int utenteId, required ImpostazioniRequest request}) async 
-  {
+  Future<bool> aggiornaImpostazioni({
+    required int utenteId, 
+    required ImpostazioniRequest request
+  }) async {
+    print('🎯 DEBUG VM - Inizio aggiornamento impostazioni');
+    print('🎯 DEBUG VM - Utente ID: $utenteId');
+    print('🎯 DEBUG VM - Request data: ${request.toJson()}');
+    
     _setLoading(true);
     _setError(null);
     _setSaveSuccess(false);
-    try 
-    {
+    
+    try {
+      print('🎯 DEBUG VM - Chiamando service...');
       _impostazioni = await _impostazioniService.updateImpostazioni(
         utenteId: utenteId,
-        request: request,
+        request: request, // ← QUESTO È CORRETTO, il parametro si chiama "request"
       );
+      
+      print('✅ DEBUG VM - Impostazioni aggiornate con successo');
       _setSaveSuccess(true);
       notifyListeners();
       return true;
-    } 
-    catch (e) 
-    {
+    } catch (e) {
+      print('❌ DEBUG VM - Errore aggiornamento: $e');
+      print('❌ DEBUG VM - Tipo errore: ${e.runtimeType}');
+      
+      // Gestione specifica per "impostazioni non trovate"
+      if (e.toString().contains('Impostazioni non trovate') || e.toString().contains('404')) {
+        print('🔄 DEBUG VM - Creazione impostazioni default e riprova');
+        try {
+          await _creaImpostazioniDefault(utenteId);
+          
+          // Riprova l'aggiornamento dopo la creazione
+          _impostazioni = await _impostazioniService.updateImpostazioni(
+            utenteId: utenteId,
+            request: request,
+          );
+          
+          _setSaveSuccess(true);
+          notifyListeners();
+          return true;
+        } catch (e2) {
+          _setError('Errore nella creazione/aggiornamento: $e2');
+          return false;
+        }
+      }
+      
       _setError('Errore nell\'aggiornamento delle impostazioni: $e');
       return false;
-    } 
-    finally 
-    {
+    } finally {
       _setLoading(false);
     }
   }

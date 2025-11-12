@@ -11,65 +11,76 @@ class AuthClient extends http.BaseClient
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async 
   {
-    // DEBUG: Verifica stato autenticazione
     print('🔐 AuthClient - Stato autenticazione: ${_authService.isAuthenticated}');
     print('🔐 AuthClient - Token: ${_authService.accessToken}');
     print('🔐 AuthClient - Endpoint: ${request.url.path}');
     
-    // CORREZIONE: Aggiungi SEMPRE il token se l'utente è autenticato
-    // (tranne per i veri endpoint pubblici come login/register)
-    if (_authService.isAuthenticated && !_isPublicEndpoint(request.url.path)) 
+    // PRIMA RICHIESTA
+    final firstResponse = await _sendRequest(request);
+    
+    // Se non è 401, ritorna direttamente
+    if (firstResponse.statusCode != 401) 
     {
-      final token = _authService.accessToken;
-      if (token != null) 
-      {
-        request.headers['Authorization'] = 'Bearer $token';
-        print('🔐 AuthClient - Token aggiunto alla richiesta');
-      }
-    }
-    else if (_authService.isAuthenticated) 
-    {
-      print('🔐 AuthClient - Endpoint pubblico, token non aggiunto');
-    }
-    else 
-    {
-      print('🔐 AuthClient - Utente non autenticato');
+      return firstResponse;
     }
     
-    // Aggiungi headers comuni
-    request.headers['Content-Type'] = 'application/json';
-    request.headers['Accept'] = 'application/json';
+    // Gestione 401 - Token scaduto
+    print('🔐 AuthClient - Token scaduto, tentativo refresh...');
+    final refreshSuccess = await _authService.refreshAccessToken();
+    
+    if (refreshSuccess && _authService.isAuthenticated) 
+    {
+      print('🔐 AuthClient - Refresh riuscito, ripeto richiesta');
+      final newToken = _authService.accessToken;
+      if (newToken != null) 
+      {
+        // RICREA COMPLETAMENTE LA REQUEST
+        return await _sendRequest(request, newToken: newToken);
+      }
+    }
+    
+    print('🔐 AuthClient - Refresh fallito, logout forzato');
+    _authService.logout();
+    throw Exception('Sessione scaduta');
+  }
 
-    print('🔐 AuthClient - Headers finali: ${request.headers}');
-
-    final response = await _inner.send(request);
-
-    // DEBUG: Verifica risposta
+  // METODO AUSILIARIO PER INVIARE RICHIESTE
+  Future<http.StreamedResponse> _sendRequest(http.BaseRequest request, {String? newToken}) async 
+  {
+    // Crea una COPIA della request originale
+    final newRequest = http.Request(request.method, request.url);
+    
+    // Copia headers originali (escludendo Authorization se presente)
+    newRequest.headers.addAll(request.headers);
+    if (newRequest.headers.containsKey('Authorization')) 
+    {
+      newRequest.headers.remove('Authorization');
+    }
+    
+    // Aggiungi headers di base
+    newRequest.headers['Content-Type'] = 'application/json';
+    newRequest.headers['Accept'] = 'application/json';
+    
+    // Aggiungi il token (nuovo o originale)
+    final token = newToken ?? _authService.accessToken;
+    if (token != null && !_isPublicEndpoint(request.url.path)) 
+    {
+      newRequest.headers['Authorization'] = 'Bearer $token';
+      print('🔐 AuthClient - Token aggiunto alla richiesta');
+    }
+    
+    // Copia il body se presente
+    if (request is http.Request) 
+    {
+      newRequest.body = (request).body;
+    }
+    
+    print('🔐 AuthClient - Headers finali: ${newRequest.headers}');
+    
+    // Invia la NUOVA richiesta
+    final response = await _inner.send(newRequest);
     print('🔐 AuthClient - Response status: ${response.statusCode}');
     
-    // Gestione errori di autenticazione
-    if (response.statusCode == 401) 
-    {
-      print('🔐 AuthClient - Token scaduto, tentativo refresh...');
-      final refreshSuccess = await _authService.refreshAccessToken();
-      if (refreshSuccess && _authService.isAuthenticated) 
-      {
-        print('🔐 AuthClient - Refresh riuscito, ripeto richiesta');
-        final newToken = _authService.accessToken;
-        if (newToken != null) 
-        {
-          request.headers['Authorization'] = 'Bearer $newToken';
-          return await _inner.send(request);
-        }
-      }
-      else 
-      {
-        print('🔐 AuthClient - Refresh fallito, logout forzato');
-        _authService.logout();
-        throw Exception('Sessione scaduta');
-      }
-    }
-
     return response;
   }
 
