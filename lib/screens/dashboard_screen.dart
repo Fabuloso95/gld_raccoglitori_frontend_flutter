@@ -125,7 +125,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             case 0:
               break;
             case 1:
-              Navigator.pushNamed(context, '/lettura');
+              _navigateToLetturaFromBottomNav();
               break;
             case 2:
               Navigator.pushNamed(context, '/votazioni');
@@ -178,6 +178,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  void _navigateToLetturaFromBottomNav() async 
+  {
+    final letturaService = Provider.of<LetturaCorrenteApiService>(context, listen: false);
+    
+    try 
+    {
+      final letture = await letturaService.getMyReadings();
+      LetturaCorrenteResponse? letturaCorrente;
+      
+      if (letture.isNotEmpty) 
+      {
+        try 
+        {
+          letturaCorrente = letture.firstWhere(
+            (lettura) => lettura.dataCompletamento == null,
+          );
+        } 
+        catch (e) 
+        {
+          letturaCorrente = letture.last;
+        }
+      }
+
+      if (letturaCorrente != null) 
+      {
+        // Stessa navigazione del bottone "Continua a Leggere"
+        Navigator.pushReplacementNamed(
+          context, 
+          '/lettura',
+          arguments: 
+          {
+            'bookId': letturaCorrente.libroId,
+            'bookTitle': letturaCorrente.titoloLibro,
+            'numeroPagineTotali': letturaCorrente.numeroPagineTotali,
+          }
+        );
+      } 
+      else 
+      {
+        // Se non c'è nessuna lettura, vai alla lista libri
+        Navigator.pushNamed(context, '/libri');
+      }
+    } 
+    catch (e) 
+    {
+      // In caso di errore, vai alla lista libri
+      Navigator.pushNamed(context, '/libri');
+    }
   }
 
   Widget _buildUserWelcome(AuthViewModel authViewModel) 

@@ -11,9 +11,6 @@ class AuthClient extends http.BaseClient
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async 
   {
-    print('🔐 AuthClient - Stato autenticazione: ${_authService.isAuthenticated}');
-    print('🔐 AuthClient - Token: ${_authService.accessToken}');
-    print('🔐 AuthClient - Endpoint: ${request.url.path}');
     
     // PRIMA RICHIESTA
     final firstResponse = await _sendRequest(request);
@@ -25,12 +22,10 @@ class AuthClient extends http.BaseClient
     }
     
     // Gestione 401 - Token scaduto
-    print('🔐 AuthClient - Token scaduto, tentativo refresh...');
     final refreshSuccess = await _authService.refreshAccessToken();
     
     if (refreshSuccess && _authService.isAuthenticated) 
     {
-      print('🔐 AuthClient - Refresh riuscito, ripeto richiesta');
       final newToken = _authService.accessToken;
       if (newToken != null) 
       {
@@ -39,7 +34,6 @@ class AuthClient extends http.BaseClient
       }
     }
     
-    print('🔐 AuthClient - Refresh fallito, logout forzato');
     _authService.logout();
     throw Exception('Sessione scaduta');
   }
@@ -66,7 +60,6 @@ class AuthClient extends http.BaseClient
     if (token != null && !_isPublicEndpoint(request.url.path)) 
     {
       newRequest.headers['Authorization'] = 'Bearer $token';
-      print('🔐 AuthClient - Token aggiunto alla richiesta');
     }
     
     // Copia il body se presente
@@ -75,12 +68,8 @@ class AuthClient extends http.BaseClient
       newRequest.body = (request).body;
     }
     
-    print('🔐 AuthClient - Headers finali: ${newRequest.headers}');
-    
     // Invia la NUOVA richiesta
     final response = await _inner.send(newRequest);
-    print('🔐 AuthClient - Response status: ${response.statusCode}');
-    
     return response;
   }
 

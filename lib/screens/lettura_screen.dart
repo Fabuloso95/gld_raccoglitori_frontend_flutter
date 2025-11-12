@@ -106,6 +106,13 @@ class _LetturaScreenState extends State<LetturaScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text('Lettura: ${widget.bookTitle}'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: ()
+          {
+            Navigator.pushReplacementNamed(context, '/dashboard');
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

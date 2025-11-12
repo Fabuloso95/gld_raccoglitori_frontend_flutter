@@ -342,23 +342,38 @@ class GDLApp extends StatelessWidget
                 ),
               );
             case '/lettura':
-              final args = settings.arguments as Map<String, dynamic>;
+              final args = settings.arguments as Map<String, dynamic>? ?? {};
+              
+              // DEBUG: Verifica i parametri
+              print('🔍 DEBUG Routing Lettura - args: $args');
+              
+              // Usa parametri coerenti - preferibilmente libroId invece di bookId
+              final libroId = args['libroId'] ?? args['bookId'];
+              final bookTitle = args['bookTitle'] ?? args['titoloLibro'] ?? '';
+              final numeroPagineTotali = args['numeroPagineTotali'] ?? args['totalPages'] ?? 0;
+              
+              if (libroId == null) {
+                print('❌ ERRORE Routing Lettura - libroId mancante');
+                // Fallback a una schermata di errore o home
+                return MaterialPageRoute(builder: (_) => const HomeScreen());
+              }
+              
               return MaterialPageRoute(
                 builder: (_) => LetturaScreen(
-                  bookId: args['bookId'],
-                  bookTitle: args['bookTitle'],
-                  numeroPagineTotali: args['numeroPagineTotali'],
+                  bookId: libroId,
+                  bookTitle: bookTitle,
+                  numeroPagineTotali: numeroPagineTotali,
                 ),
               );
-              case '/libri-da-leggere':
-                    return MaterialPageRoute(
-                      builder: (_) => const ListaLibriScreen(mostraSoloNonLetti: true),
-                    );
-                  case '/dettaglio-libro':
-                    final args = settings.arguments as Map<String, dynamic>;
-                    return MaterialPageRoute(
-                      builder: (_) => DettaglioLibroScreen(libroId: args['libroId']),
-                    );
+            case '/libri-da-leggere':
+              return MaterialPageRoute(
+                builder: (_) => const ListaLibriScreen(mostraSoloNonLetti: true),
+              );
+            case '/dettaglio-libro':
+              final args = settings.arguments as Map<String, dynamic>;
+              return MaterialPageRoute(
+                builder: (_) => DettaglioLibroScreen(libroId: args['libroId']),
+              );
           }
           return null;
         },
