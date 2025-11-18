@@ -5,13 +5,12 @@ import 'package:gld_raccoglitori/view_models/lettura_corrente_view_model.dart';
 import 'package:gld_raccoglitori/view_models/frase_preferita_view_model.dart';
 import 'package:gld_raccoglitori/view_models/curiosita_view_model.dart';
 import 'package:gld_raccoglitori/models/libro_response.dart';
-import 'package:gld_raccoglitori/widgets/crea_libro_dialog.dart';
 import '../widgets/aggiungi_frase_preferita_dialog.dart';
 import 'package:gld_raccoglitori/widgets/aggiungi_curiosita_dialog.dart';
-
 import '../widgets/modifica_libro_dialog.dart';
 
-class DettaglioLibroScreen extends StatefulWidget {
+class DettaglioLibroScreen extends StatefulWidget 
+{
   final int libroId;
 
   const DettaglioLibroScreen({
@@ -23,7 +22,8 @@ class DettaglioLibroScreen extends StatefulWidget {
   State<DettaglioLibroScreen> createState() => _DettaglioLibroScreenState();
 }
 
-class _DettaglioLibroScreenState extends State<DettaglioLibroScreen> with SingleTickerProviderStateMixin {
+class _DettaglioLibroScreenState extends State<DettaglioLibroScreen> with SingleTickerProviderStateMixin 
+{
   late TabController _tabController;
   bool _isLoading = true;
 
@@ -285,10 +285,10 @@ class _DettaglioLibroScreenState extends State<DettaglioLibroScreen> with Single
         color: Colors.blueGrey[100],
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey,
             blurRadius: 4,
             offset: const Offset(0, 2),
-          ),
+          ),  
         ],
       ),
       child: Column(

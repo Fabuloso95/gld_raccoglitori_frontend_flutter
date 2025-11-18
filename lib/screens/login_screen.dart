@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:gld_raccoglitori/view_models/auth_view_model.dart';
 import 'registration_screen.dart';
@@ -49,32 +50,32 @@ class _LoginScreenState extends State<LoginScreen>
                   // Icona o logo
                   const Icon(
                     Icons.book_online,
-                    size: 100,
+                    size: 80,
                     color: Color(0xFF1E88E5),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   
                   // Titolo
                   const Text(
                     'Benvenuto',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1E88E5),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   
                   const Text(
                     'Accedi al tuo account',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       color: Colors.grey,
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
                   
                   // Campo Username/Email
                   TextFormField(
@@ -83,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen>
                       labelText: 'Username o Email',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.person_outline),
-                      contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+                      contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 15),
                     ),
                     validator: (value) 
                     {
@@ -94,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen>
                       return null;
                     },
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   
                   // Campo Password
                   TextFormField(
@@ -116,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen>
                           });
                         },
                       ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
                     ),
                     validator: (value) 
                     {
@@ -131,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen>
                       return null;
                     },
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   
                   // Link password dimenticata
                   Align(
@@ -148,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen>
                       child: const Text('Password dimenticata?'),
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 20),
                   
                   // Bottone di Login
                   Consumer<AuthViewModel>(
@@ -190,22 +191,25 @@ class _LoginScreenState extends State<LoginScreen>
                           if (viewModel.isLoading)
                             const CircularProgressIndicator()
                           else
-                            ElevatedButton(
-                              onPressed: _handleLogin,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1E88E5),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _handleLogin,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1E88E5),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  elevation: 2,
                                 ),
-                                elevation: 2,
-                              ),
-                              child: const Text(
-                                'Accedi',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                                child: const Text(
+                                  'Accedi',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -213,7 +217,31 @@ class _LoginScreenState extends State<LoginScreen>
                       );
                     },
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _handleGoogleLogin,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        side: const BorderSide(color: Colors.grey),
+                      ),
+                      icon: const FaIcon(FontAwesomeIcons.google, size: 20, color: Colors.red),
+                      label: const Text(
+                        'Accedi con Google',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   
                   // Divisore
                   Row(
@@ -232,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen>
                       Expanded(child: Divider(color: Colors.grey.shade300)),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   
                   // Link per la Registrazione
                   OutlinedButton(
@@ -287,5 +315,10 @@ class _LoginScreenState extends State<LoginScreen>
       // La navigazione viene gestita automaticamente da AuthWrapper
       _formKey.currentState?.reset();
     }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    final viewModel = context.read<AuthViewModel>();
+    await viewModel.loginWithGoogle();
   }
 }

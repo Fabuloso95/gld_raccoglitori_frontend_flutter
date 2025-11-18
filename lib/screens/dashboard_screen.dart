@@ -108,6 +108,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             label: 'Lettura',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.library_add),
+            label: 'Biblioteca',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.how_to_vote),
             label: 'Votazioni',
           ),
@@ -120,20 +124,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             label: 'Profilo',
           ),
         ],
-        onTap: (index) {
-          switch (index) {
+        onTap: (index) 
+        {
+          switch (index) 
+          {
             case 0:
               break;
             case 1:
               _navigateToLetturaFromBottomNav();
               break;
             case 2:
-              Navigator.pushNamed(context, '/votazioni');
+              Navigator.pushNamed(context, '/libri');
               break;
             case 3:
-              Navigator.pushNamed(context, '/discussioni');
+              Navigator.pushNamed(context, '/votazioni');
               break;
             case 4:
+              Navigator.pushNamed(context, '/discussioni');
+              break;
+            case 5:
               Navigator.pushNamed(context, '/profilo');
               break;
           }
@@ -463,7 +472,6 @@ Widget _buildLoadingCard(String message) {
 
   Widget _buildProgressoCard(LetturaCorrenteResponse lettura) 
   {
-    // ✅ CORREZIONE: usa numeroPagineTotali dal backend
     final progressoPercent = lettura.numeroPagineTotali > 0 ? (lettura.paginaCorrente / lettura.numeroPagineTotali) * 100 : 0;
     
     return Column(
@@ -485,8 +493,6 @@ Widget _buildLoadingCard(String message) {
         ElevatedButton(
           onPressed: () 
           {
-            print('🎯 Navigazione a lettura libro ID: ${lettura.libroId}');
-            
             // Usa pushReplacementNamed per evitare loop
             Navigator.pushReplacementNamed(
               context, 
@@ -519,7 +525,7 @@ Widget _buildLoadingCard(String message) {
         ElevatedButton(
           onPressed: () 
           {
-            Navigator.pushNamed(context, '/library');
+            Navigator.pushNamed(context, '/libro');
           },
           child: const Text('Scegli un Libro'),
         ),
@@ -603,11 +609,12 @@ Widget _buildLoadingCard(String message) {
       title: Text(libro.titolo),
       subtitle: Text('di ${libro.autore} • ${proposta.numVoti} voti'),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: () {
+      onTap: () 
+      {
         Navigator.pushNamed(
           context,
-          '/book-details',
-          arguments: {'bookId': libro.id},
+          '/dettaglio-libro',
+          arguments: {'libroId': libro.id},
         );
       },
     );

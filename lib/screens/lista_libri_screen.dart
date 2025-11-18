@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:gld_raccoglitori/view_models/libro_view_model.dart';
 import 'package:gld_raccoglitori/models/libro_response.dart';
 import 'package:gld_raccoglitori/view_models/lettura_corrente_view_model.dart';
-import 'package:gld_raccoglitori/widgets/crea_libro_dialog.dart';
 
 class ListaLibriScreen extends StatefulWidget 
 {
@@ -41,27 +40,33 @@ class _ListaLibriScreenState extends State<ListaLibriScreen>
   {
     return Scaffold(
       appBar: AppBar(
-        title: _searchMode ? _buildSearchField() : Text(widget.mostraSoloNonLetti == true ? 'Libri da Leggere' : 'Catalogo Libri'),
-        actions: [
-          if (!_searchMode) ...[
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () => setState(() => _searchMode = true),
-              tooltip: 'Cerca',
-            ),
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => _mostraDialogoCreaLibro(context),
-              tooltip: 'Aggiungi Libro',
-            ),
-          ],
+      title: _searchMode ? _buildSearchField() : Text(widget.mostraSoloNonLetti == true ? 'Libri da Leggere' : 'Biblioteca',
+                                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                                      ),
+      actions: [
+        if (!_searchMode) ...[
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _caricaLibri,
-            tooltip: 'Ricarica',
+            icon: const Icon(Icons.search),
+            onPressed: () => setState(() => _searchMode = true),
+            tooltip: 'Cerca libri',
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: FloatingActionButton(
+              onPressed: () => _mostraDialogoCreaLibro(context),
+              tooltip: 'Aggiungi Nuovo Libro',
+              mini: true,
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
           ),
         ],
-      ),
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: _caricaLibri,
+          tooltip: 'Ricarica lista',
+        ),
+      ],
+    ),
       body: Consumer<LibroViewModel>(
         builder: (context, viewModel, child) 
         {
@@ -98,22 +103,54 @@ class _ListaLibriScreenState extends State<ListaLibriScreen>
           if (libriDaMostrare.isEmpty) 
           {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.menu_book, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Nessun libro trovato',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
-                  ),
-                  Text(
-                    widget.mostraSoloNonLetti == true
-                        ? 'Tutti i libri sono stati letti!'
-                        : 'Aggiungi il primo libro al catalogo',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.menu_book, size: 80, color: Colors.grey),
+                    const SizedBox(height: 20),
+                    Text(
+                      widget.mostraSoloNonLetti == true
+                          ? 'Nessun libro da leggere'
+                          : 'La biblioteca è vuota',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.mostraSoloNonLetti == true
+                          ? 'Tutti i libri sono stati letti!'
+                          : 'Aggiungi il primo libro alla biblioteca',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 30),
+                    ElevatedButton.icon(
+                      onPressed: () => _mostraDialogoCreaLibro(context),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Aggiungi Primo Libro'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (widget.mostraSoloNonLetti == true)
+                      TextButton(
+                        onPressed: ()
+                        {
+                          Navigator.pushReplacementNamed(context, '/libri');
+                        },
+                        child: const Text('Vedi Tutti i Libri'),
+                      ),
+                  ],
+                ),
               ),
             );
           }
@@ -121,10 +158,10 @@ class _ListaLibriScreenState extends State<ListaLibriScreen>
           return GridView.builder(
             padding: const EdgeInsets.all(16),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.7,
+              crossAxisCount: 4,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.6,
             ),
             itemCount: libriDaMostrare.length,
             itemBuilder: (context, index) {
@@ -175,10 +212,7 @@ class _ListaLibriScreenState extends State<ListaLibriScreen>
 
   void _mostraDialogoCreaLibro(BuildContext context) 
   {
-    showDialog(
-      context: context,
-      builder: (context) => const CreaLibroDialog(),
-    );
+    Navigator.pushNamed(context, '/crea-libro');
   }
 }
 

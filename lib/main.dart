@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:gld_raccoglitori/repository/evento_repository.dart';
 import 'package:gld_raccoglitori/screens/impostazioni_screen.dart';
 import 'package:provider/provider.dart';
 import 'screens/calendario_screen.dart';
 import 'screens/chat_screen.dart';
+import 'screens/crea_libro_screen.dart';
 import 'screens/crea_utente_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/dettaglio_libro_screen.dart';
@@ -22,6 +24,7 @@ import 'screens/votazioni_screen.dart';
 import 'services/auth_service.dart';
 import 'services/commenti_api_service.dart';
 import 'services/curiosita_api_service.dart';
+import 'services/evento_service.dart';
 import 'services/frase_preferita_api_service.dart';
 import 'services/lettura_corrente_api_service.dart';
 import 'services/libro_api_service.dart';
@@ -34,6 +37,7 @@ import 'view_models/auth_view_model.dart';
 import 'view_models/chat_view_model.dart';
 import 'view_models/commenti_view_model.dart';
 import 'view_models/curiosita_view_model.dart';
+import 'view_models/evento_view_model.dart';
 import 'view_models/frase_preferita_view_model.dart';
 import 'view_models/lettura_corrente_view_model.dart';
 import 'view_models/libro_view_model.dart';
@@ -152,6 +156,21 @@ void main()
             );
           },
         ),
+        Provider<EventoRepository>(
+          create: (context) {
+            final authService = context.read<AuthService>();
+            return EventoRepository(
+              baseUrl: "http://localhost:8080",
+              token: authService.accessToken,
+            );
+          },
+        ),
+        Provider<EventoService>(
+          create: (context) {
+            final eventoRepository = context.read<EventoRepository>();
+            return EventoService(repository: eventoRepository);
+          },
+        ),
         ChangeNotifierProvider<UtenteViewModel>(
           create: (context) {
             final utenteService = context.read<UtenteApiService>();
@@ -220,6 +239,12 @@ void main()
             return ImpostazioniViewModel(impostazioniService);
           },
         ),
+        ChangeNotifierProvider<EventoViewModel>(
+          create: (context) {
+            final eventoService = context.read<EventoService>();
+            return EventoViewModel(eventoService: eventoService);
+          },
+        ),
       ],
       child: const GDLApp(),
     ),
@@ -269,6 +294,7 @@ class GDLApp extends StatelessWidget
           '/utenti': (context) => const ListaUtentiScreen(),
           '/chat': (context) => const ListaChatScreen(),
           '/libri': (context) => const ListaLibriScreen(),
+          '/crea-libro': (context) => const CreaLibroScreen(),
           '/dettaglio-libro': (context) 
           {
             final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;

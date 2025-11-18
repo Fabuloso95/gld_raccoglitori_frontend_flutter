@@ -1,0 +1,7 @@
+enum TipoEvento 
+{
+  VOTAZIONE,
+  DISCUSSIONE,
+  INCONTRO,
+  SCADENZA,
+}

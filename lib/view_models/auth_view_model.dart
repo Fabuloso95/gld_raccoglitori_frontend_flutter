@@ -163,6 +163,37 @@ class AuthViewModel extends ChangeNotifier
     }
   }
 
+  Future<void> loginWithGoogle() async 
+  {
+    try 
+    {
+      _setLoading(true);
+      _setError(null);
+
+      // Implementa la logica per OAuth2 con Google
+      // Questo dipende da come hai configurato l'autenticazione OAuth2
+      // Potresti usare un package come url_launcher o webview
+      
+      // Esempio base:
+      final String redirectUrl = 'http://localhost:8080/oauth2/authorization/google';
+      
+      // Apri il browser o WebView per l'autenticazione OAuth2
+      // await launchUrl(Uri.parse(redirectUrl));
+      
+      // Dovrai gestire il callback con il token
+
+      _setError('Login con Google in sviluppo - URL: $redirectUrl');
+    } 
+    catch (e) 
+    {
+      _setError('Errore durante il login con Google: ${e.toString()}');
+    }
+    finally 
+    {
+      _setLoading(false);
+    }
+  }
+
   // Pulisci gli errori
   void clearError() 
   {
