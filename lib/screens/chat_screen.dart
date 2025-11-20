@@ -10,6 +10,7 @@ class ChatScreen extends StatefulWidget
   final int? altroUtenteId;
   final String tipoChat;
   final int utenteCorrenteId;
+  final String? titoloChat;
 
   const ChatScreen({
     super.key,
@@ -17,6 +18,7 @@ class ChatScreen extends StatefulWidget
     this.altroUtenteId,
     required this.tipoChat,
     required this.utenteCorrenteId,
+    this.titoloChat
   });
 
   @override
@@ -27,26 +29,59 @@ class _ChatScreenState extends State<ChatScreen>
 {
   final TextEditingController _messaggioController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  bool _isInitialLoad = true;
+  late String _effectiveGruppoId;
 
   @override
   void initState() 
   {
     super.initState();
-    _caricaStoricoChat();
+    _calculateEffectiveGruppoId();
+    WidgetsBinding.instance.addPostFrameCallback((_) 
+    {
+      _caricaStoricoChat();
+    });
+  }
+
+  void _calculateEffectiveGruppoId() 
+  {
+    if (widget.tipoChat == 'GRUPPO') 
+    {
+      _effectiveGruppoId = widget.gruppoId ?? 'gruppo_generale';
+    } 
+    else if (widget.tipoChat == 'PRIVATA' && widget.altroUtenteId != null) 
+    {
+      int minId = widget.utenteCorrenteId < widget.altroUtenteId! 
+          ? widget.utenteCorrenteId 
+          : widget.altroUtenteId!;
+      int maxId = widget.utenteCorrenteId > widget.altroUtenteId! 
+          ? widget.utenteCorrenteId 
+          : widget.altroUtenteId!;
+      _effectiveGruppoId = 'privata_${minId}_${maxId}';
+    } 
+    else 
+    {
+      _effectiveGruppoId = 'gruppo_generale';
+    }
+    
+    print('🔍 Gruppo ID calcolato: $_effectiveGruppoId');
   }
 
   void _caricaStoricoChat() 
   {
     final viewModel = context.read<ChatViewModel>();
     
-    if (widget.tipoChat == 'GRUPPO' && widget.gruppoId != null) 
+    if (widget.tipoChat == 'GRUPPO') 
     {
-      viewModel.caricaChatGruppo(widget.gruppoId!);
+      print('📥 Caricamento chat gruppo: $_effectiveGruppoId');
+      viewModel.caricaChatGruppo(_effectiveGruppoId);
     } 
     else if (widget.tipoChat == 'PRIVATA' && widget.altroUtenteId != null) 
     {
+      print('📥 Caricamento chat privata con utente: ${widget.altroUtenteId}');
       viewModel.caricaChatPrivata(widget.altroUtenteId!);
     }
+    _isInitialLoad = false;
   }
 
   @override
@@ -57,10 +92,8 @@ class _ChatScreenState extends State<ChatScreen>
     super.dispose();
   }
 
-  void _scrollToBottom() 
-  {
-    if (_scrollController.hasClients) 
-    {
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 300),
@@ -69,13 +102,23 @@ class _ChatScreenState extends State<ChatScreen>
     }
   }
 
+  String _getTitoloChat() {
+    if (widget.titoloChat != null) return widget.titoloChat!;
+    
+    if (widget.tipoChat == 'GRUPPO') {
+      return 'Chat Gruppo ${widget.gruppoId ?? ''}';
+    } else {
+      return 'Chat Privata';
+    }
+  }
+
   @override
-  Widget build(BuildContext context) 
-  {
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.tipoChat == 'GRUPPO' ? 'Chat Gruppo ${widget.gruppoId}' : 'Chat Privata',),
+        title: Text(_getTitoloChat()),
+        backgroundColor: const Color(0xFF1E88E5),
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -88,21 +131,17 @@ class _ChatScreenState extends State<ChatScreen>
           // Lista messaggi
           Expanded(
             child: Consumer<ChatViewModel>(
-              builder: (context, viewModel, child) 
-              {
+              builder: (context, viewModel, child) {
                 // Scroll to bottom quando i messaggi cambiano
-                WidgetsBinding.instance.addPostFrameCallback((_) 
-                {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
                   _scrollToBottom();
                 });
 
-                if (viewModel.isLoading && viewModel.messaggiCorrenti.isEmpty) 
-                {
+                if (_isInitialLoad && viewModel.isLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                if (viewModel.error != null) 
-                {
+                if (viewModel.error != null) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -110,10 +149,11 @@ class _ChatScreenState extends State<ChatScreen>
                         Text(
                           'Errore: ${viewModel.error}',
                           style: const TextStyle(color: Colors.red),
+                          textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 16),
                         ElevatedButton(
-                          onPressed: () 
-                          {
+                          onPressed: () {
                             viewModel.clearError();
                             _caricaStoricoChat();
                           },
@@ -126,12 +166,22 @@ class _ChatScreenState extends State<ChatScreen>
 
                 final messaggi = viewModel.messaggiCorrenti;
 
-                if (messaggi.isEmpty) 
-                {
+                if (messaggi.isEmpty) {
                   return const Center(
-                    child: Text(
-                      'Nessun messaggio ancora',
-                      style: TextStyle(color: Colors.grey),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'Nessun messaggio ancora',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                        Text(
+                          'Inizia la conversazione!',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
                     ),
                   );
                 }
@@ -140,8 +190,7 @@ class _ChatScreenState extends State<ChatScreen>
                   controller: _scrollController,
                   padding: const EdgeInsets.all(8.0),
                   itemCount: messaggi.length,
-                  itemBuilder: (context, index) 
-                  {
+                  itemBuilder: (context, index) {
                     final messaggio = messaggi[index];
                     return _MessaggioBubble(
                       messaggio: messaggio,
@@ -170,11 +219,13 @@ class _ChatScreenState extends State<ChatScreen>
     final viewModel = context.read<ChatViewModel>();
     
     final request = MessaggioChatRequestModel(
-      gruppoId: widget.gruppoId,
+      gruppoId: _effectiveGruppoId,
       tipoChat: widget.tipoChat,
       destinatarioId: widget.altroUtenteId,
       contenuto: testo.trim(),
     );
+
+    print('📤 Invio messaggio - Tipo: ${widget.tipoChat}, GruppoId: $_effectiveGruppoId');
 
     final success = await viewModel.inviaMessaggio(request);
 
@@ -182,6 +233,7 @@ class _ChatScreenState extends State<ChatScreen>
     {
       _messaggioController.clear();
       _scrollToBottom();
+      _caricaStoricoChat();
     }
   }
 }
@@ -324,47 +376,56 @@ class _InputMessaggio extends StatelessWidget
   @override
   Widget build(BuildContext context) 
   {
-    return Container(
-      padding: const EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            offset: const Offset(0, -2),
-            blurRadius: 4,
-            color: const Color.fromARGB(28, 0, 0, 0),
+    return Consumer<ChatViewModel>(
+      builder: (context, viewModel, child) 
+      {
+        return Container(
+          padding: const EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                offset: const Offset(0, -2),
+                blurRadius: 4,
+                color: Colors.grey.withOpacity(0.1),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                hintText: 'Scrivi un messaggio...',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 12.0,
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    hintText: viewModel.isLoading ? 'Invio in corso...' : 'Scrivi un messaggio...',
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 12.0,
+                    ),
+                    enabled: !viewModel.isLoading,
+                  ),
+                  maxLines: null,
+                  onSubmitted: viewModel.isLoading ? null : onInviaMessaggio,
                 ),
               ),
-              maxLines: null,
-              onSubmitted: onInviaMessaggio,
-            ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: viewModel.isLoading 
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.send),
+                onPressed: viewModel.isLoading 
+                    ? null 
+                    : () => onInviaMessaggio(controller.text),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Consumer<ChatViewModel>(
-            builder: (context, viewModel, child) 
-            {
-              return IconButton(
-                icon: viewModel.isLoading ? const CircularProgressIndicator() : const Icon(Icons.send),
-                onPressed: viewModel.isLoading ? null : () => onInviaMessaggio(controller.text),
-              );
-            },
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

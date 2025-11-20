@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:gld_raccoglitori/view_models/lettura_corrente_view_model.dart';
 import 'package:gld_raccoglitori/view_models/commenti_view_model.dart';
 import 'package:gld_raccoglitori/view_models/curiosita_view_model.dart';
-import 'package:gld_raccoglitori/widgets/salva_frase_dialog.dart';
 import 'package:gld_raccoglitori/widgets/frasi_preferite_preview_widget.dart';
 import 'package:gld_raccoglitori/widgets/curiosita_preview_widget.dart';
+
+import '../view_models/frase_preferita_view_model.dart';
+import '../widgets/aggiungi_frase_preferita_dialog.dart';
 
 class LetturaScreen extends StatefulWidget 
 {
@@ -38,26 +40,30 @@ class _LetturaScreenState extends State<LetturaScreen>
 
   void _inizializzaLettura() 
   {
-    final letturaViewModel = context.read<LetturaCorrenteViewModel>();
-    final commentiViewModel = context.read<CommentiViewModel>();
-    final curiositaViewModel = context.read<CuriositaViewModel>();
-
-    // Carica le letture dell'utente
-    letturaViewModel.caricaMieLetture().then((_) 
+    WidgetsBinding.instance.addPostFrameCallback((_) 
     {
-      // Verifica se esiste già una lettura per questo libro
-      final letturaEsistente = letturaViewModel.getLetturaPerLibro(widget.bookId);
-      
-      if (letturaEsistente != null) 
+      final letturaViewModel = context.read<LetturaCorrenteViewModel>();
+      final commentiViewModel = context.read<CommentiViewModel>();
+      final curiositaViewModel = context.read<CuriositaViewModel>();
+      final fraseViewModel = context.read<FrasePreferitaViewModel>();
+
+      letturaViewModel.caricaMieLetture().then((_) 
       {
-        letturaViewModel.impostaLetturaCorrente(letturaEsistente);
-        _caricaDatiPaginaCorrente(
-          commentiViewModel,
-          curiositaViewModel,
-          letturaEsistente.id,
-          letturaEsistente.paginaCorrente,
-        );
-      }
+        final letturaEsistente = letturaViewModel.getLetturaPerLibro(widget.bookId);
+        
+        if (letturaEsistente != null) 
+        {
+          letturaViewModel.impostaLetturaCorrente(letturaEsistente);
+          _caricaDatiPaginaCorrente(
+            commentiViewModel,
+            curiositaViewModel,
+            letturaEsistente.id,
+            letturaEsistente.paginaCorrente,
+          );
+          
+          fraseViewModel.caricaFrasiPerLibro(widget.bookId);
+        }
+      });
     });
   }
 
@@ -84,6 +90,7 @@ class _LetturaScreenState extends State<LetturaScreen>
   Future<void> _iniziaNuovaLettura() async 
   {
     final letturaViewModel = context.read<LetturaCorrenteViewModel>();
+    final fraseViewModel = context.read<FrasePreferitaViewModel>();
     final success = await letturaViewModel.iniziaLettura(
       libroId: widget.bookId,
       paginaIniziale: 1,
@@ -97,6 +104,7 @@ class _LetturaScreenState extends State<LetturaScreen>
         letturaViewModel.letturaCorrente!.id,
         1,
       );
+      fraseViewModel.caricaFrasiPerLibro(widget.bookId);
     }
   }
 
@@ -160,14 +168,29 @@ class _LetturaScreenState extends State<LetturaScreen>
 
   Widget _buildHeaderProgresso(LetturaCorrenteViewModel letturaViewModel) 
   {
-    final percentuale = letturaViewModel.percentualeCompletamento;
+    double percentuale = 0;
+    if (letturaViewModel.letturaCorrente != null) 
+    {
+      final lettura = letturaViewModel.letturaCorrente!;
+      final paginaCorrente = lettura.paginaCorrente;
+      final numeroPagineTotali = lettura.numeroPagineTotali;
+      
+      if (numeroPagineTotali > 0 && paginaCorrente > 0) 
+      {
+        percentuale = (paginaCorrente / numeroPagineTotali) * 100;
+      }
+    }
     
     return Container(
       padding: const EdgeInsets.all(16),
       color: Colors.grey[50],
       child: Column(
         children: [
-          LinearProgressIndicator(value: percentuale / 100),
+          LinearProgressIndicator(
+            value: percentuale / 100,
+            backgroundColor: Colors.grey[300],
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF1E88E5)),
+          ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -270,16 +293,38 @@ class _LetturaScreenState extends State<LetturaScreen>
 
   void _mostraMenuContestuale() 
   {
-    // Mostra un menu per salvare come frase preferita
-    // Anche senza il testo esatto, puoi chiedere all'utente di inserirlo
     showDialog(
       context: context,
-      builder: (context) => SalvaFraseDialog(
+      builder: (context) => AggiungiFrasePreferitaDialog(
         libroId: widget.bookId,
-        paginaRiferimento: context.read<LetturaCorrenteViewModel>().paginaCorrente,
-        titoloLibro: widget.bookTitle,
+        numeroPagineTotali: widget.numeroPagineTotali ?? 350,
+        paginaPrecompilata: context.read<LetturaCorrenteViewModel>().paginaCorrente,
       ),
-    );
+    ).then((success) 
+    {
+      if (success == true) 
+      {
+        context.read<FrasePreferitaViewModel>().caricaFrasiPerLibro(widget.bookId);
+      }
+    });
+  }
+
+  void _salvaFrasePreferita() 
+  {
+    showDialog(
+      context: context,
+      builder: (context) => AggiungiFrasePreferitaDialog(
+        libroId: widget.bookId,
+        numeroPagineTotali: widget.numeroPagineTotali ?? 350,
+        paginaPrecompilata: context.read<LetturaCorrenteViewModel>().paginaCorrente,
+      ),
+    ).then((success) 
+    {
+      if (success == true) 
+      {
+        context.read<FrasePreferitaViewModel>().caricaFrasiPerLibro(widget.bookId);
+      }
+    });
   }
 
   Widget _buildCommentiPreview(LetturaCorrenteViewModel letturaViewModel) 
@@ -455,27 +500,6 @@ class _LetturaScreenState extends State<LetturaScreen>
         letturaViewModel.paginaCorrente,
       );
     }
-  }
-
-  void _salvaFrasePreferita() 
-  {
-    if (_testoSelezionato.isEmpty) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => SalvaFraseDialog(
-        libroId: widget.bookId,
-        testoFrasePrecompilato: _testoSelezionato,
-        paginaRiferimento: context.read<LetturaCorrenteViewModel>().paginaCorrente,
-        titoloLibro: widget.bookTitle,
-      ),
-    ).then((_) 
-    {
-      setState(() 
-      {
-        _testoSelezionato = '';
-      });
-    });
   }
 
   void _salvaCommento(LetturaCorrenteViewModel letturaViewModel) async 

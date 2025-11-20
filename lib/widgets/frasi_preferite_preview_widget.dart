@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:gld_raccoglitori/view_models/frase_preferita_view_model.dart';
-import 'package:gld_raccoglitori/widgets/salva_frase_dialog.dart';
 import '../models/frase_preferita_response.dart';
+import 'aggiungi_frase_preferita_dialog.dart';
 
-class FrasiPreferitePreviewWidget extends StatelessWidget 
+class FrasiPreferitePreviewWidget extends StatefulWidget 
 {
   final int libroId;
   final String? titoloLibro;
@@ -16,21 +16,34 @@ class FrasiPreferitePreviewWidget extends StatelessWidget
   });
 
   @override
+  State<FrasiPreferitePreviewWidget> createState() => _FrasiPreferitePreviewWidgetState();
+}
+
+class _FrasiPreferitePreviewWidgetState extends State<FrasiPreferitePreviewWidget> 
+{
+  bool _hasLoaded = false;
+
+  @override
+  void initState() 
+  {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) 
+    {
+      if (!_hasLoaded) 
+      {
+        context.read<FrasePreferitaViewModel>().caricaFrasiPerLibro(widget.libroId);
+        _hasLoaded = true;
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) 
   {
     return Consumer<FrasePreferitaViewModel>(
       builder: (context, viewModel, child) 
       {
-        final frasi = viewModel.getFrasiPerLibro(libroId);
-
-        // Carica le frasi quando il widget viene costruito
-        if (frasi.isEmpty && !viewModel.isLoading) 
-        {
-          WidgetsBinding.instance.addPostFrameCallback((_) 
-          {
-            viewModel.caricaFrasiPerLibro(libroId);
-          });
-        }
+        final frasi = viewModel.frasiLibro;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,14 +66,13 @@ class FrasiPreferitePreviewWidget extends StatelessWidget
                     TextButton(
                       onPressed: () 
                       {
-                        // Naviga alla lista completa
                         Navigator.pushNamed(
                           context,
                           '/frasi-preferite',
                           arguments: 
                           {
-                            'libroId': libroId,
-                            'titoloLibro': titoloLibro,
+                            'libroId': widget.libroId,
+                            'titoloLibro': widget.titoloLibro,
                           },
                         );
                       },
@@ -72,11 +84,16 @@ class FrasiPreferitePreviewWidget extends StatelessWidget
                     {
                       showDialog(
                         context: context,
-                        builder: (context) => SalvaFraseDialog(
-                          libroId: libroId,
-                          titoloLibro: titoloLibro,
+                        builder: (context) => AggiungiFrasePreferitaDialog(
+                          libroId: widget.libroId,
+                          numeroPagineTotali: 1000,
                         ),
-                      );
+                      ).then((success) {
+                        if (success == true) {
+                          // Ricarica le frasi
+                          context.read<FrasePreferitaViewModel>().caricaFrasiPerLibro(widget.libroId);
+                        }
+                      });
                     },
                     tooltip: 'Aggiungi frase',
                   ),
@@ -85,6 +102,14 @@ class FrasiPreferitePreviewWidget extends StatelessWidget
             ),
             if (frasi.isNotEmpty)
               ...frasi.take(2).map((frase) => _FrasePreviewItem(frase: frase)),
+            if (frasi.isEmpty && !viewModel.isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Nessuna frase preferita ancora',
+                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                ),
+              ),
           ],
         );
       },

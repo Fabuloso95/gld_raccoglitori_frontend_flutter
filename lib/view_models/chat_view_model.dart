@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:gld_raccoglitori/models/MessaggioChatRequestModel.dart';
 import 'package:gld_raccoglitori/models/messaggio_chat_response.dart';
 import 'package:gld_raccoglitori/services/messaggio_chat_api_service.dart';
@@ -43,6 +44,21 @@ class ChatViewModel extends ChangeNotifier
     notifyListeners();
   }
 
+  void _notifyListenersSafe() 
+  {
+    if (WidgetsBinding.instance.lifecycleState != null) 
+    {
+      WidgetsBinding.instance.addPostFrameCallback((_) 
+      {
+        notifyListeners();
+      });
+    } 
+    else 
+    {
+      notifyListeners();
+    }
+  }
+
   // Metodi per le operazioni di chat
 
   // Invia un messaggio
@@ -67,7 +83,7 @@ class ChatViewModel extends ChangeNotifier
         _ordinaMessaggiPerData(_messaggiPrivati);
       }
       
-      notifyListeners();
+      _notifyListenersSafe();
       return true;
     } 
     catch (e) 
@@ -93,7 +109,7 @@ class ChatViewModel extends ChangeNotifier
     {
       _messaggiGruppo = await _chatService.getGroupChatHistory(gruppoId);
       _ordinaMessaggiPerData(_messaggiGruppo);
-      notifyListeners();
+      _notifyListenersSafe();
     } 
     catch (e) 
     {
@@ -119,7 +135,7 @@ class ChatViewModel extends ChangeNotifier
         altroUtenteId: altroUtenteId,
       );
       _ordinaMessaggiPerData(_messaggiPrivati);
-      notifyListeners();
+      _notifyListenersSafe();
     } 
     catch (e) 
     {
@@ -218,7 +234,7 @@ class ChatViewModel extends ChangeNotifier
   {
     if (messaggio.tipoChat == 'GRUPPO' && 
         _chatAttiva == 'gruppo' && 
-        messaggio.gruppoID == _gruppoIdAttivo) 
+        messaggio.gruppoId == _gruppoIdAttivo) 
     {
       _messaggiGruppo.add(messaggio);
       _ordinaMessaggiPerData(_messaggiGruppo);
@@ -230,7 +246,7 @@ class ChatViewModel extends ChangeNotifier
       _messaggiPrivati.add(messaggio);
       _ordinaMessaggiPerData(_messaggiPrivati);
     }
-    notifyListeners();
+    _notifyListenersSafe();
   }
 
   // Pulisci gli errori

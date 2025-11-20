@@ -656,18 +656,26 @@ class _DettaglioLibroScreenState extends State<DettaglioLibroScreen> with Single
     }
   }
 
-  void _aggiungiFrasePreferita(BuildContext context) {
+  void _aggiungiFrasePreferita(BuildContext context) 
+  {
     final libroViewModel = context.read<LibroViewModel>();
     final libro = libroViewModel.libroSelezionato;
 
-    if (libro != null) {
+    if (libro != null) 
+    {
       showDialog(
         context: context,
         builder: (context) => AggiungiFrasePreferitaDialog(
           libroId: libro.id,
           numeroPagineTotali: libro.numeroPagine,
         ),
-      );
+      ).then((success) 
+      {
+      if (success == true) 
+      {
+        context.read<FrasePreferitaViewModel>().caricaFrasiPerLibro(libro.id);
+      }
+    });
     }
   }
 
@@ -799,7 +807,7 @@ class _DettaglioLibroScreenState extends State<DettaglioLibroScreen> with Single
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              frase.testo,
+              frase.testoFrase,
               style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 16),
             ),
             if (frase.paginaRiferimento != null)

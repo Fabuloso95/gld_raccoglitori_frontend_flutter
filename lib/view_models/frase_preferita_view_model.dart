@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:gld_raccoglitori/models/FrasePreferitaRequestModel.dart';
 import 'package:gld_raccoglitori/models/frase_preferita_response.dart';
 import 'package:gld_raccoglitori/services/frase_preferita_api_service.dart';
@@ -38,6 +39,20 @@ class FrasePreferitaViewModel extends ChangeNotifier
     _error = error;
     notifyListeners();
   }
+
+  void _safeNotifyListeners() 
+  {
+    if (!_isNotifying) {
+      _isNotifying = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) 
+      {
+        _isNotifying = false;
+        notifyListeners();
+      });
+    }
+  }
+
+  bool _isNotifying = false;
 
   // Metodi per le operazioni CRUD
 
@@ -179,14 +194,14 @@ class FrasePreferitaViewModel extends ChangeNotifier
     required int utenteId,
     required int libroId,
     required String testoFrase,
-    required int paginaRiferimento,
+    int? paginaRiferimento,
   }) async 
   {
     final request = FrasePreferitaRequestModel(
       utenteId: utenteId,
       libroId: libroId,
       testoFrase: testoFrase,
-      paginaRiferimento: paginaRiferimento,
+      paginaRiferimento: paginaRiferimento ?? 0,
     );
     
     return await salvaFrasePreferita(request);
@@ -217,7 +232,7 @@ class FrasePreferitaViewModel extends ChangeNotifier
   Map<int, List<FrasePreferitaResponse>> get frasiPerLibro 
   {
     final map = <int, List<FrasePreferitaResponse>>{};
-    for (final frase in _mieFrasi) {
+    for (final frase in _frasiLibro) {
       map.putIfAbsent(frase.libroId, () => []).add(frase);
     }
     return map;

@@ -22,6 +22,7 @@ import 'screens/registration_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/votazioni_screen.dart';
 import 'services/auth_service.dart';
+import 'services/chat_list_service.dart';
 import 'services/commenti_api_service.dart';
 import 'services/curiosita_api_service.dart';
 import 'services/evento_service.dart';
@@ -245,6 +246,10 @@ void main()
             return EventoViewModel(eventoService: eventoService);
           },
         ),
+        ChangeNotifierProvider(create: (context) => ChatListService(
+          chatService: context.read<MessaggioChatApiService>(),
+          authService: context.read<AuthService>(),
+        )),
       ],
       child: const GDLApp(),
     ),
@@ -325,8 +330,7 @@ class GDLApp extends StatelessWidget
               final authService = Provider.of<AuthService>(context, listen: false);
               final utenteCorrenteId = authService.currentUserId;
               
-              if (utenteCorrenteId == null) 
-              {
+              if (utenteCorrenteId == null) {
                 return MaterialPageRoute(builder: (_) => const LoginScreen());
               }
               
@@ -336,6 +340,7 @@ class GDLApp extends StatelessWidget
                   altroUtenteId: args['altroUtenteId'],
                   tipoChat: args['tipoChat'],
                   utenteCorrenteId: utenteCorrenteId,
+                  titoloChat: args['titoloChat'],
                 ),
               );
             case '/commenti':

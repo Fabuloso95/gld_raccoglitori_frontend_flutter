@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:gld_raccoglitori/models/LetturaCorrenteRequestModel.dart';
 import 'package:gld_raccoglitori/models/LetturaCorrenteUpdateRequestModel.dart';
 import 'package:gld_raccoglitori/models/lettura_corrente_response.dart';
@@ -39,6 +40,21 @@ class LetturaCorrenteViewModel extends ChangeNotifier
     _error = error;
     notifyListeners();
   }
+
+  void _safeNotifyListeners() 
+  {
+    if (!_isNotifying) 
+    {
+      _isNotifying = true;
+      WidgetsBinding.instance.addPostFrameCallback((_)
+      {
+        _isNotifying = false;
+        notifyListeners();
+      });
+    }
+  }
+
+  bool _isNotifying = false;
 
   // Metodi per le operazioni CRUD
 
@@ -228,7 +244,6 @@ class LetturaCorrenteViewModel extends ChangeNotifier
     notifyListeners();
   }
 
-  // Cerca una lettura per libro
   LetturaCorrenteResponse? getLetturaPerLibro(int libroId) 
   {
     try 
@@ -243,7 +258,6 @@ class LetturaCorrenteViewModel extends ChangeNotifier
     }
   }
 
-  // Vai alla pagina successiva
   Future<bool> vaiPaginaSuccessiva() async 
   {
     if (_letturaCorrente == null) return false;
